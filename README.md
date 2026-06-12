@@ -7,10 +7,9 @@
 robotics toolkit — small, self-contained, pure-Python. Point it at a robot on
 GitHub and get a working kinematic model in three lines.
 
-> **Status: scaffold.** This repo currently holds the package skeleton
-> (`pyproject.toml`, license, layout). The 13 modules are extracted from the
-> FieldPilot SaaS codebase in a follow-up step — see the project PLAN. The
-> examples below are the intended v0.1 API.
+> **Status: pre-release (`0.1.0.dev0`).** The 14 open modules + their test suite
+> (144 tests, passing) are in place. Not yet published to PyPI — install from
+> source for now (`pip install -e .`). API is stabilising toward v0.1.
 
 ## Install
 

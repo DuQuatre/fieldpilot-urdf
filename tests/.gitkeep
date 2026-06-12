@@ -1,3 +1,0 @@
-# Open test_*.py files are copied here in PLAN.md task P1.3b:
-#   test_urdf, test_fk, test_ik, test_graph, test_mesh_collisions, test_trajectory,
-#   test_importer, test_repair, test_viz, test_storage, test_diagnose_core
