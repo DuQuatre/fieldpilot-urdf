@@ -1,5 +1,9 @@
 # fieldpilot-urdf
 
+[![CI](https://github.com/DuQuatre/fieldpilot-urdf/actions/workflows/ci.yml/badge.svg)](https://github.com/DuQuatre/fieldpilot-urdf/actions/workflows/ci.yml)
+[![License: AGPL-3.0](https://img.shields.io/badge/License-AGPL--3.0-blue.svg)](LICENSE)
+[![Python](https://img.shields.io/badge/python-3.10%2B-blue.svg)](pyproject.toml)
+
 > Import any ROS robot from a URL and run **FK / IK / collision / validation /
 > repair** in pure Python. No ROS install, no build.
 
@@ -46,6 +50,47 @@ print(ik.converged, ik.position_error)                  # numerical IK, honours 
 print(detect_self_collisions(robot))                    # [(link_a, link_b), ...]
 ```
 
+### Validate & auto-repair
+
+```python
+from fieldpilot_urdf import from_file, run_all, summary, repair
+
+robot = from_file("maybe_broken.urdf")
+findings = run_all(robot)                 # 8 lint rules (R001–R008)
+print(summary(findings))                  # {'total': 3, 'error': 1, 'warning': 2, ...}
+
+fixed, patches, unfixable = repair(robot)  # deterministic fixes for the repairable rules
+print([p.code for p in patches])           # e.g. ['R003', 'R005']
+print("left for a human:", unfixable)      # rule codes that can't be auto-fixed
+print(summary(run_all(fixed)))             # fewer (often zero) findings
+```
+
+### Render (needs the `[viz]` extra)
+
+```python
+from fieldpilot_urdf.viz import render_kinematic_tree, render_pose_3d
+
+open("tree.png", "wb").write(render_kinematic_tree(robot))      # graphviz
+open("pose.png", "wb").write(render_pose_3d(robot, fmt="png"))  # matplotlib
+```
+
+### Symbolic fault diagnosis
+
+```python
+from fieldpilot_urdf import diagnose, Symptom, Hypothesis
+
+# "tool can't reach this pose" — is a dead shoulder motor the cause?
+report = diagnose(
+    robot,
+    Symptom(kind="cant_reach", target_link="tool0", target_xyz=(0.4, 0.1, 0.5)),
+    [Hypothesis(suspect_joint="shoulder_pan_joint", fault_mode="motor_dead")],
+)
+print(report.verdict, "—", report.summary)   # CONFIRMED / REFUTED / INCONCLUSIVE
+```
+
+*(The natural-language front-end that generates hypotheses from a free-text
+symptom via an LLM is part of [FieldPilot](https://github.com/DuQuatre) SaaS.)*
+
 ## What you can do
 
 | Capability | API |
@@ -73,6 +118,12 @@ The open toolkit gives you the robotics. **[FieldPilot](https://github.com/DuQua
 - **multi-tenant hosting**, Telegram bots, and the agro-food field-service pipeline.
 
 → **Star this repo** and check out FieldPilot SaaS.
+
+## Security
+
+`import_urdf` fetches a user-supplied URL, so it ships SSRF defences (HTTPS-only,
+host allowlist, 5 MB cap, timeout, redirect re-validation). See
+[`SECURITY.md`](SECURITY.md) for how to configure the allowlist and report issues.
 
 ## License
 
