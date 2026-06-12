@@ -1,0 +1,48 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "fieldpilot-urdf"
+version = "0.1.0.dev0"
+description = "Import any ROS robot from a URL and run FK/IK/collision/validation in pure Python — no ROS install, no build."
+readme = "README.md"
+requires-python = ">=3.10"
+license = "AGPL-3.0-only"
+license-files = ["LICENSE"]
+authors = [{ name = "FieldPilot" }]
+keywords = ["urdf", "robotics", "kinematics", "ros", "forward-kinematics", "inverse-kinematics", "collision"]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Science/Research",
+    "License :: OSI Approved :: GNU Affero General Public License v3",
+    "Programming Language :: Python :: 3",
+    "Topic :: Scientific/Engineering",
+]
+
+# Core install stays light. trimesh/graphviz/matplotlib are optional extras so a
+# plain `pip install fieldpilot-urdf` pulls only what the kinematics path needs.
+dependencies = [
+    "pydantic>=2.10",
+    "numpy>=1.24",
+    "scipy>=1.11",      # ik.py least_squares
+    "networkx>=3.4",    # graph.py
+    "requests>=2.31",   # importer.py fetch
+    "xacro>=2.1",       # importer.py macro/include expansion
+]
+
+[project.optional-dependencies]
+mesh = ["trimesh>=4.0"]                          # collisions.py mesh AABB (lazy import)
+viz = ["graphviz>=0.20", "matplotlib>=3.8"]      # viz.py renderers
+all = ["fieldpilot-urdf[mesh,viz]"]
+dev = ["pytest>=8.0", "fieldpilot-urdf[all]"]
+
+[project.urls]
+Homepage = "https://github.com/DuQuatre/fieldpilot-urdf"
+"FieldPilot SaaS" = "https://fieldpilot.example"   # TODO: real marketing URL
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/fieldpilot_urdf"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
