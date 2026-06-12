@@ -11,9 +11,9 @@
 robotics toolkit — small, self-contained, pure-Python. Point it at a robot on
 GitHub and get a working kinematic model in three lines.
 
-> **Status: pre-release (`0.1.0.dev0`).** The 14 open modules + their test suite
-> (144 tests, passing) are in place. Not yet published to PyPI — install from
-> source for now (`pip install -e .`). API is stabilising toward v0.1.
+> **Status: `0.1.0`, staged for first release.** 14 open modules + 144 passing
+> tests; release tooling ready (see [`RELEASING.md`](RELEASING.md)). Until the
+> tag is pushed and it lands on PyPI, install from source (`pip install -e .`).
 
 ## Install
 
