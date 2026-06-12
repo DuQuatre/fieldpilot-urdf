@@ -1,8 +1,7 @@
 """URDF XML <-> Pydantic. Stdlib only.
 
-Mirrors pydexpi's `loaders/proteus_serializer.py` split: pure mapping, no
-business logic. Round-trip preserves structural fields; xmlns/comments are
-dropped.
+Pure mapping, no business logic. Round-trip preserves structural fields;
+xmlns/comments are dropped.
 """
 from __future__ import annotations
 

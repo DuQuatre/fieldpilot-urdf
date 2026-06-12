@@ -1,8 +1,7 @@
 """Symbolic diagnostic rules over a URDF Robot.
 
 Each rule is a pure function `(robot, G) -> list[Finding]`. Add rules by
-appending to RULES. Output format mirrors pydexpi's diagnostic findings:
-{code, severity, message, refs}.
+appending to RULES. Findings use a compact format: {code, severity, message, refs}.
 """
 from __future__ import annotations
 

@@ -1,7 +1,6 @@
 """URDF (Unified Robot Description Format) Pydantic models.
 
-Inspired by pydexpi's class hierarchy: pure Pydantic models with no I/O coupling.
-XML serialization lives in `loader.py`.
+Pure Pydantic models with no I/O coupling. XML serialization lives in `loader.py`.
 """
 from __future__ import annotations
 

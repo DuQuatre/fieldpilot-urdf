@@ -1,13 +1,13 @@
 """Visualisation for URDF Robot models.
 
-Two pure-bytes renderers mirroring app/graph_visualization.py's pattern:
+Two pure-bytes renderers:
 
     render_kinematic_tree(robot, q?, highlight?, format)  -> bytes (png|svg)
     render_pose_3d(robot, q?, format)                     -> bytes (png|svg)
 
-Both require external native deps already used by pyDEXPI: graphviz's `dot`
-binary for the tree, matplotlib for the 3D pose. No I/O — endpoints write
-the bytes to the HTTP response themselves.
+Both require the optional `[viz]` extra: graphviz's `dot` binary for the tree,
+matplotlib for the 3D pose. No I/O — the caller writes the returned bytes
+wherever it likes.
 """
 from __future__ import annotations
 

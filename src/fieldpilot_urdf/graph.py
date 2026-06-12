@@ -1,8 +1,8 @@
 """URDF Robot -> NetworkX DiGraph.
 
-Style: mirrors pydexpi's `graph_service.build_graph` (model -> nx.DiGraph).
-Nodes = links (attrs: mass, has_inertial). Edges = joints, directed parent->child
-(attrs: joint_name, joint_type, axis, limit). A valid URDF is a tree.
+`build_graph(robot)` returns an `nx.DiGraph`. Nodes = links (attrs: mass,
+has_inertial). Edges = joints, directed parent->child (attrs: joint_name,
+joint_type, axis, limit). A valid URDF is a tree.
 """
 from __future__ import annotations
 
