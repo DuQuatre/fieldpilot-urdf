@@ -15,10 +15,11 @@ jobs:
       matrix:
         python-version: ["3.10", "3.11", "3.12", "3.13"]
         # `xacro` is the most fragile dependency (importer.py patches its
-        # internals), so guard an older pin on one job in addition to latest.
+        # internals), so guard the lowest supported pin (the floor of the
+        # `xacro>=2.1` requirement) on one job in addition to latest.
         include:
           - python-version: "3.12"
-            xacro: "2.0.*"
+            xacro: "2.1.0"
     steps:
       - uses: actions/checkout@v4
 
