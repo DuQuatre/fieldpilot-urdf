@@ -107,6 +107,31 @@ symptom via an LLM is part of [FieldPilot](https://github.com/DuQuatre) SaaS.)*
 | Render kinematic tree / 3D pose | `render_kinematic_tree`, `render_pose_3d` |
 | Local robot registry | `save_robot`, `load_robot`, `list_robots` |
 
+## How this compares
+
+The Python URDF ecosystem already has good *parsers*. `fieldpilot-urdf` is not
+trying to replace them — it sits one layer up, as an **analysis** toolkit.
+
+- **[`urchin`](https://github.com/fishbotics/urchin)** is the maintained fork of
+  the classic `urdfpy` (unmaintained since 2020, won't install on Python 3.10+).
+  Reach for it if you want the original `urdfpy` API and mesh-heavy
+  visualization on a modern Python.
+- **[`yourdfpy`](https://github.com/clemense/yourdfpy)** is the most robust
+  *loader* of real-world URDFs and ships an excellent visualization CLI. Reach
+  for it if your priority is parsing messy URDFs found in the wild.
+
+Reach for **`fieldpilot-urdf`** when parsing is the *start*, not the goal — when
+you also want to **solve IK** (numerical, joint-limit-aware), **import a robot
+straight from a URL** (`$(find)` / `<xacro:include>` / xacro expansion, with
+SSRF defenses), **lint** a URDF (8 rules, R001–R008) and **deterministically
+auto-repair** the fixable ones, and run **symbolic fault diagnosis** ("is a dead
+shoulder motor why the tool can't reach?"). The core install stays light —
+`pydantic` + `numpy` + `scipy` + `networkx` — with mesh/viz as optional extras,
+so you never pull `pyrender` or `pycollada` unless you ask for them.
+
+> Need to *load* a difficult URDF more than analyze it? `yourdfpy` is probably
+> the better fit — and `fieldpilot-urdf` happily consumes anything it can export.
+
 ## ⭐ Want more?
 
 The open toolkit gives you the robotics. **[FieldPilot](https://github.com/DuQuatre)**
