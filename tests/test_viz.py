@@ -8,12 +8,17 @@ Run: python3 -m pytest app/urdf/test_viz.py -q  (from pydexpi-server/)
 """
 from __future__ import annotations
 
+import importlib.util
 import shutil
 
 import pytest
 
 from fieldpilot_urdf import from_xml
-from fieldpilot_urdf.viz import render_kinematic_tree, render_pose_3d
+from fieldpilot_urdf.viz import (
+    render_kinematic_tree,
+    render_pose_3d,
+    render_pose_mesh,
+)
 
 
 SAMPLE = """\
@@ -109,6 +114,85 @@ def test_render_pose_q_extends_prismatic(robot):
     """A non-default q should change link positions visibly in the title text."""
     out = render_pose_3d(robot, fmt="svg", q={"j2": 0.4})
     assert b"j2=0.4" in out
+
+
+# --- mesh-accurate pose (urchin + pyrender) --------------------------------
+#
+# Two skip layers: the [meshviz] extra may be absent, and even with it a CI box
+# may lack a working headless GL backend (EGL/osmesa). Both skip rather than
+# fail so the core suite stays green without the heavy stack.
+
+meshviz_missing = pytest.mark.skipif(
+    any(importlib.util.find_spec(m) is None for m in ("urchin", "pyrender")),
+    reason="[meshviz] extra (urchin + pyrender) not installed",
+)
+
+
+# A robot with primitive *visual* geometry — renders without any mesh_dir and
+# gives the scene something to draw (SAMPLE's links are bare/inertial-only).
+PRIMITIVE_SAMPLE = """\
+<robot name="prim">
+  <link name="base">
+    <visual><geometry><box size="0.3 0.3 0.1"/></geometry></visual>
+  </link>
+  <link name="arm">
+    <visual><origin xyz="0 0 0.2"/><geometry><cylinder radius="0.05" length="0.4"/></geometry></visual>
+  </link>
+  <joint name="j1" type="revolute">
+    <parent link="base"/><child link="arm"/>
+    <axis xyz="0 0 1"/><origin xyz="0 0 0.1"/>
+    <limit lower="-1.57" upper="1.57" effort="10" velocity="1"/>
+  </joint>
+</robot>
+"""
+
+
+@meshviz_missing
+def test_render_pose_mesh_primitives_png():
+    """Primitive visual geometry needs no mesh_dir; this drives the full
+    urchin->pyrender->GL path and must yield a non-trivial PNG."""
+    r = from_xml(PRIMITIVE_SAMPLE)
+    try:
+        out = render_pose_mesh(r, q={"j1": 0.6}, width=320, height=240)
+    except Exception as e:  # no usable GL backend on this box
+        pytest.skip(f"headless GL render unavailable: {e}")
+    assert out[:4] == PNG_MAGIC
+    assert len(out) > 1000  # actual geometry rendered, not a blank frame
+
+
+# No skip marker: the fmt guard raises before urchin/pyrender are imported,
+# so this validation runs even without the [meshviz] extra installed.
+def test_render_pose_mesh_rejects_svg(robot):
+    with pytest.raises(ValueError):
+        render_pose_mesh(robot, fmt="svg")
+
+
+def test_resolve_mesh_robot_rewrites_and_drops(tmp_path):
+    """_resolve_mesh_robot rewrites present meshes to absolute paths and drops
+    visuals whose mesh is missing — no GL or extras needed for this unit."""
+    from fieldpilot_urdf.viz import _resolve_mesh_robot
+
+    urdf = """\
+<robot name="m">
+  <link name="base">
+    <visual><geometry><mesh filename="package://pkg/present.stl"/></geometry></visual>
+    <visual><geometry><mesh filename="package://pkg/missing.stl"/></geometry></visual>
+    <visual><geometry><box size="1 1 1"/></geometry></visual>
+  </link>
+</robot>
+"""
+    r = from_xml(urdf)
+    present = tmp_path / "pkg" / "present.stl"
+    present.parent.mkdir(parents=True)
+    present.write_bytes(b"solid\n")
+
+    out, dropped = _resolve_mesh_robot(r, tmp_path)
+    assert dropped == 1  # missing.stl
+    geoms = [v.geometry for v in out.links[0].visuals]
+    kinds = sorted(g.kind for g in geoms)
+    assert kinds == ["box", "mesh"]  # missing mesh visual removed
+    mesh_geom = next(g for g in geoms if g.kind == "mesh")
+    assert mesh_geom.filename == str(present)  # absolute, resolvable by urchin
 
 
 if __name__ == "__main__":

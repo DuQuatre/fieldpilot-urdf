@@ -33,8 +33,12 @@ dependencies = [
 
 [project.optional-dependencies]
 mesh = ["trimesh>=4.0"]                          # collisions.py mesh AABB (lazy import)
-viz = ["graphviz>=0.20", "matplotlib>=3.8"]      # viz.py renderers
-all = ["fieldpilot-urdf[mesh,viz]"]
+viz = ["graphviz>=0.20", "matplotlib>=3.8"]      # tree + mesh-free pose renderers
+# Industrial mesh-accurate render_pose_mesh(): heavy GL stack, kept out of [viz]
+# so the light pose/tree renderers don't drag in pyrender. Needs a headless GL
+# backend at runtime (EGL by default; osmesa for pure software).
+meshviz = ["urchin>=0.0.27", "pyrender>=0.1.45", "fieldpilot-urdf[viz]"]
+all = ["fieldpilot-urdf[mesh,viz,meshviz]"]
 dev = ["pytest>=8.0", "fieldpilot-urdf[all]"]
 
 [project.urls]
