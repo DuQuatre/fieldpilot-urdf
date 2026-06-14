@@ -167,6 +167,26 @@ def test_render_pose_mesh_rejects_svg(robot):
         render_pose_mesh(robot, fmt="svg")
 
 
+def test_render_pose_mesh_missing_extra_message(robot, monkeypatch):
+    """When urchin/pyrender aren't importable, the error names the [meshviz]
+    extra — and does NOT blame the GL backend. Deterministic via a find_spec
+    stub, so it holds whether or not the extra is actually installed."""
+    import importlib.util as ilu
+
+    real_find_spec = ilu.find_spec
+
+    def fake_find_spec(name, *args, **kwargs):
+        if name in ("urchin", "pyrender"):
+            return None  # simulate the extra not installed
+        return real_find_spec(name, *args, **kwargs)
+
+    monkeypatch.setattr("importlib.util.find_spec", fake_find_spec)
+
+    with pytest.raises(ImportError, match="meshviz") as exc:
+        render_pose_mesh(robot)
+    assert "backend" not in str(exc.value).lower()  # not the GL-backend message
+
+
 def test_resolve_mesh_robot_rewrites_and_drops(tmp_path):
     """_resolve_mesh_robot rewrites present meshes to absolute paths and drops
     visuals whose mesh is missing — no GL or extras needed for this unit."""

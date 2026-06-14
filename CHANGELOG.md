@@ -4,6 +4,15 @@ All notable changes to `fieldpilot-urdf` are documented here. Format follows
 [Keep a Changelog](https://keepachangelog.com/), and the project aims to adhere
 to [Semantic Versioning](https://semver.org/).
 
+## [0.2.1] — 2026-06-14
+
+### Fixed
+- `render_pose_mesh` no longer reports a missing `[meshviz]` extra when the
+  extra is installed but the selected GL backend's system library
+  (`libOSMesa`/`libEGL`) can't load. It now checks the packages first and, on
+  a backend load failure, raises a clear error naming the backend and the
+  library to install.
+
 ## [0.2.0] — 2026-06-14
 
 ### Added
