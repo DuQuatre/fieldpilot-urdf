@@ -27,11 +27,15 @@ jobs:
         with:
           python-version: ${{ matrix.python-version }}
 
-      # graphviz `dot` for the tree renderer, and OSMesa so the mesh renderer
-      # (render_pose_mesh) has a software GL backend and actually runs offscreen
-      # instead of skipping. Both renderer test groups skip without these.
-      - name: Install graphviz + OSMesa (headless GL)
-        run: sudo apt-get update && sudo apt-get install -y graphviz libosmesa6 libosmesa6-dev
+      # graphviz `dot` for the tree renderer, and Mesa's software EGL stack so
+      # the mesh renderer (render_pose_mesh) has a headless GL backend and runs
+      # offscreen instead of skipping. Both renderer test groups skip without
+      # these. EGL+llvmpipe is more reliable on CI than Ubuntu's stock OSMesa.
+      - name: Install graphviz + Mesa EGL (headless GL)
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y graphviz \
+            libegl1 libgles2 libgl1-mesa-dri libglvnd0 libgbm1
 
       - name: Install package (with all extras + dev)
         run: |
@@ -47,10 +51,11 @@ jobs:
 
       - name: Run tests
         env:
-          # Drive render_pose_mesh's offscreen path through software OSMesa
-          # (no GPU/display on the runner). The renderer reads this var.
-          FIELDPILOT_URDF_RENDER_BACKEND: osmesa
-        run: pytest -q
+          # Drive render_pose_mesh's offscreen path through Mesa's surfaceless
+          # software EGL (no GPU/display on the runner). The renderer reads this.
+          FIELDPILOT_URDF_RENDER_BACKEND: egl
+          LIBGL_ALWAYS_SOFTWARE: "1"
+        run: pytest -q -rs
 
   build:
     name: build & check distribution
