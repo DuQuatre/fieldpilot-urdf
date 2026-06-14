@@ -4,7 +4,7 @@ All notable changes to `fieldpilot-urdf` are documented here. Format follows
 [Keep a Changelog](https://keepachangelog.com/), and the project aims to adhere
 to [Semantic Versioning](https://semver.org/).
 
-## [0.2.0] — unreleased
+## [0.2.0] — 2026-06-14
 
 ### Added
 - **Mesh-accurate pose render** — `viz.render_pose_mesh(robot, q?, mesh_dir?)`
