@@ -4,7 +4,7 @@ All notable changes to `fieldpilot-urdf` are documented here. Format follows
 [Keep a Changelog](https://keepachangelog.com/), and the project aims to adhere
 to [Semantic Versioning](https://semver.org/).
 
-## [0.1.0] — unreleased
+## [0.1.0] — 2026-06-13
 
 First public release: the open robotics core of FieldPilot, extracted into a
 standalone, pure-Python, pip-installable package (AGPL-3.0).
