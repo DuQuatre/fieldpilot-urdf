@@ -294,15 +294,33 @@ def render_pose_mesh(
         os.environ["PYOPENGL_PLATFORM"] = os.environ.get(
             "FIELDPILOT_URDF_RENDER_BACKEND", "egl"
         )
+    backend = os.environ["PYOPENGL_PLATFORM"]
+
+    # Distinguish "extra not installed" from "GL backend library won't load".
+    # find_spec confirms the packages exist WITHOUT importing pyrender — which
+    # eagerly loads the PyOpenGL backend and would otherwise conflate the two
+    # (a missing libOSMesa/libEGL surfaces as an ImportError from `import
+    # pyrender`, masquerading as a missing [meshviz] extra).
+    import importlib.util
+
+    if any(importlib.util.find_spec(m) is None for m in ("urchin", "pyrender")):
+        raise ImportError(
+            "render_pose_mesh needs the optional mesh-render stack. "
+            "Install it with:  pip install 'fieldpilot-urdf[meshviz]'"
+        )
 
     try:
         import numpy as np
         import pyrender
         import urchin
-    except ImportError as e:  # pragma: no cover - exercised via env without extra
+    except (ImportError, OSError) as e:  # pragma: no cover - needs a broken GL box
+        # Packages are present (checked above), so the chosen GL backend's
+        # native library failed to load — name it instead of blaming the extra.
         raise ImportError(
-            "render_pose_mesh needs the optional mesh-render stack. "
-            "Install it with:  pip install 'fieldpilot-urdf[meshviz]'"
+            f"render_pose_mesh's GL backend {backend!r} could not be loaded: {e}. "
+            f"Install the backend's system library (libosmesa6 for 'osmesa', or "
+            f"Mesa EGL — libegl1 libgl1-mesa-dri — for 'egl'), or choose another "
+            f"via FIELDPILOT_URDF_RENDER_BACKEND."
         ) from e
 
     import matplotlib.image as mpimg
