@@ -4,6 +4,20 @@ All notable changes to `fieldpilot-urdf` are documented here. Format follows
 [Keep a Changelog](https://keepachangelog.com/), and the project aims to adhere
 to [Semantic Versioning](https://semver.org/).
 
+## [0.2.0] — 2026-06-14
+
+### Added
+- **Mesh-accurate pose render** — `viz.render_pose_mesh(robot, q?, mesh_dir?)`
+  renders the robot's actual visual meshes offscreen (urchin → pyrender) to PNG
+  bytes, complementing the existing mesh-free `render_pose_3d` stick figure.
+  Resolves link meshes against the on-disk layout written by
+  `importer.fetch_meshes`; robots with only primitive geometry render with no
+  `mesh_dir`.
+- **`[meshviz]` optional extra** (`urchin`, `pyrender`) for the mesh renderer,
+  kept out of `[viz]` so the light tree/pose renderers don't pull in the GL
+  stack. Needs a headless GL backend at runtime (EGL by default; set
+  `FIELDPILOT_URDF_RENDER_BACKEND=osmesa` for pure software).
+
 ## [0.1.0] — 2026-06-13
 
 First public release: the open robotics core of FieldPilot, extracted into a
