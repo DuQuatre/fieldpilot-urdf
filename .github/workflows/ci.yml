@@ -27,9 +27,11 @@ jobs:
         with:
           python-version: ${{ matrix.python-version }}
 
-      # graphviz `dot` so the viz renderer tests actually run (they skip otherwise)
-      - name: Install graphviz
-        run: sudo apt-get update && sudo apt-get install -y graphviz
+      # graphviz `dot` for the tree renderer, and OSMesa so the mesh renderer
+      # (render_pose_mesh) has a software GL backend and actually runs offscreen
+      # instead of skipping. Both renderer test groups skip without these.
+      - name: Install graphviz + OSMesa (headless GL)
+        run: sudo apt-get update && sudo apt-get install -y graphviz libosmesa6 libosmesa6-dev
 
       - name: Install package (with all extras + dev)
         run: |
@@ -44,6 +46,10 @@ jobs:
         run: pip show xacro numpy scipy networkx pydantic | grep -E "^(Name|Version)"
 
       - name: Run tests
+        env:
+          # Drive render_pose_mesh's offscreen path through software OSMesa
+          # (no GPU/display on the runner). The renderer reads this var.
+          FIELDPILOT_URDF_RENDER_BACKEND: osmesa
         run: pytest -q
 
   build:

@@ -150,7 +150,7 @@ PRIMITIVE_SAMPLE = """\
 @meshviz_missing
 def test_render_pose_mesh_primitives_png():
     """Primitive visual geometry needs no mesh_dir; this drives the full
-    urchin->pyrender->EGL path and must yield a non-trivial PNG."""
+    urchin->pyrender->GL path and must yield a non-trivial PNG."""
     r = from_xml(PRIMITIVE_SAMPLE)
     try:
         out = render_pose_mesh(r, q={"j1": 0.6}, width=320, height=240)
@@ -160,7 +160,8 @@ def test_render_pose_mesh_primitives_png():
     assert len(out) > 1000  # actual geometry rendered, not a blank frame
 
 
-@meshviz_missing
+# No skip marker: the fmt guard raises before urchin/pyrender are imported,
+# so this validation runs even without the [meshviz] extra installed.
 def test_render_pose_mesh_rejects_svg(robot):
     with pytest.raises(ValueError):
         render_pose_mesh(robot, fmt="svg")
