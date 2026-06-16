@@ -128,3 +128,89 @@ def test_pinned_structure_has_zero_acceleration():
     assert np.allclose(qdd, 0.0, atol=1e-7)
     assert lam.shape == (3,)
     assert np.linalg.norm(lam) > 1e-6   # gravity is actually being reacted
+
+
+# --- DAE drift stabilization: Baumgarte + projection -----------------------
+
+def test_baumgarte_feedback_rhs():
+    """At an off-manifold state the stabilized acceleration must satisfy the
+    Baumgarte ODE: A·(q̈_stab − q̈_free) = −2α(A q̇) − β²·c. Since the free solve
+    enforces A·q̈_free = −Ȧ q̇, this is checkable without Ȧ."""
+    cd = constrained_dynamics(_pinned_robot(), gravity=(0, 0, -9.81))
+    A_fn, c_fn = cd.lambdify_constraint_jacobian(), cd.lambdify_constraint_residual()
+    q = [v + 0.02 for v in _qvec(cd)]      # perturb off the manifold
+    qd = np.array([0.1, -0.2, 0.3])
+    A, c = A_fn(q), c_fn(q)
+    assert np.linalg.norm(c) > 1e-3        # genuinely off-manifold
+
+    alpha, beta = 8.0, 8.0
+    qdd0, _ = cd.lambdify_forward_dynamics()(q, qd)
+    qdd1, _ = cd.lambdify_forward_dynamics(alpha=alpha, beta=beta)(q, qd)
+    lhs = A @ (qdd1 - qdd0)
+    rhs = -2.0 * alpha * (A @ qd) - beta ** 2 * c
+    assert np.allclose(lhs, rhs, atol=1e-7)
+
+
+def test_baumgarte_noop_on_manifold():
+    # On the manifold at rest the feedback terms vanish → same as unstabilized.
+    cd = constrained_dynamics(_pinned_robot(), gravity=(0, 0, -9.81))
+    q, qd = _qvec(cd), [0.0, 0.0, 0.0]
+    a = cd.lambdify_forward_dynamics()(q, qd)[0]
+    b = cd.lambdify_forward_dynamics(alpha=10.0, beta=10.0)(q, qd)[0]
+    # Both are ≈ 0 (a 0-DOF structure at rest doesn't accelerate); the feedback
+    # adds nothing meaningful on-manifold at rest.
+    assert np.allclose(a, 0.0, atol=1e-9) and np.allclose(b, 0.0, atol=1e-9)
+
+
+def _parallelogram():
+    A, B, C, D = 1.0, 2.0, 1.0, 2.0
+    inr = lambda: Inertial(mass=1.0, inertia=Inertia(ixx=0.05, iyy=0.05, izz=0.05))
+    return Robot(
+        name="parallelogram",
+        links=[Link(name="ground"), Link(name="crank", inertial=inr()),
+               Link(name="coupler", inertial=inr()), Link(name="rocker", inertial=inr())],
+        joints=[
+            Joint(name="j1", type="revolute", parent="ground", child="crank",
+                  origin=Origin(xyz=(0, 0, 0)), axis=(0, 0, 1), limit=_lim()),
+            Joint(name="j2", type="revolute", parent="crank", child="coupler",
+                  origin=Origin(xyz=(A, 0, 0)), axis=(0, 0, 1), limit=_lim()),
+            Joint(name="j3", type="revolute", parent="ground", child="rocker",
+                  origin=Origin(xyz=(D, 0, 0)), axis=(0, 0, 1), limit=_lim()),
+        ],
+        loops=[LoopClosure(name="close", kind="point",
+                           a=FrameRef(link="coupler", origin=Origin(xyz=(B, 0, 0))),
+                           b=FrameRef(link="rocker", origin=Origin(xyz=(C, 0, 0))))],
+    )
+
+
+def test_projection_removes_position_drift():
+    # Redundant planar 'point' closure (rank-2 of 3): pinv-based projection still
+    # snaps a drifted config back onto the manifold.
+    cd = constrained_dynamics(_parallelogram())
+    res = cd.lambdify_constraint_residual()
+    order = {j: i for i, j in enumerate(cd.actuated_joint_ids)}
+    theta = 0.4
+    closed = np.zeros(3)
+    for jid, val in {"j1": theta, "j2": -theta, "j3": theta}.items():
+        closed[order[jid]] = val
+    drifted = closed + np.array([0.05, -0.03, 0.04])
+    assert np.linalg.norm(res(drifted)) > 1e-2          # off the manifold
+
+    q_proj, qd_proj = cd.project(drifted, np.zeros(3))
+    assert np.linalg.norm(res(q_proj)) < 1e-9           # back on the manifold
+    assert np.linalg.norm(q_proj - drifted) < 0.2       # minimal correction
+
+
+def test_projection_removes_velocity_drift():
+    cd = constrained_dynamics(_pinned_robot())
+    q = _qvec(cd)
+    _, qd_proj = cd.project(q, [0.5, -0.3, 0.7])
+    A = cd.lambdify_constraint_jacobian()(q)
+    assert np.linalg.norm(A @ qd_proj) < 1e-9           # velocity now tangent
+
+
+def test_projection_noop_without_constraints():
+    cd = constrained_dynamics(_two_link_arm())   # tree, no loops
+    q, qd = [0.3, -0.4], [0.5, 0.2]
+    qp, qdp = cd.project(q, qd)
+    assert np.allclose(qp, q) and np.allclose(qdp, qd)
