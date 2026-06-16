@@ -4,6 +4,30 @@ All notable changes to `fieldpilot-urdf` are documented here. Format follows
 [Keep a Changelog](https://keepachangelog.com/), and the project aims to adhere
 to [Semantic Versioning](https://semver.org/).
 
+## [0.3.0] — 2026-06-16
+
+### Added
+- **Symbolic dynamics** — `dynamics.SymbolicDynamics(robot)` builds Kane's-method
+  equations of motion for tree (serial) robots: symbolic `mass_matrix` `M(q)`,
+  `forcing` `F(q, q̇, τ)`, and `lambdify_forward_dynamics()` → a NumPy
+  `(q, u, tau) → q̈` callable for `scipy.integrate.solve_ivp`. `link_pose()`
+  resolves a link's world transform for cross-checking against
+  `forward_kinematics`. Ported from the MecAI project (MIT) and re-targeted onto
+  the URDF `Robot` model via a small validating adapter.
+- **`[dynamics]` optional extra** (`sympy`), lazy-imported so the core
+  kinematics path never pulls in SymPy.
+
+### Fixed
+- `__version__` in `fieldpilot_urdf/__init__.py` was stuck at `0.1.0` while the
+  packaged version had advanced to `0.2.x`; it now tracks the real version.
+
+### Notes
+- Dynamics v1 is **tree-only**. Joint-origin frames use URDF's
+  `Rz(yaw)·Ry(pitch)·Rx(roll)` (space-fixed) convention, so `link_pose` matches
+  `forward_kinematics` to machine precision. Closed-loop mechanisms, a non-zero
+  `<inertial>` origin `rpy`, and multi-DOF joints (`floating`/`planar`/
+  `spherical`) raise `UnsupportedSystemError`.
+
 ## [0.2.1] — 2026-06-14
 
 ### Fixed
