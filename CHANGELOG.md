@@ -4,6 +4,10 @@ All notable changes to `fieldpilot-urdf` are documented here. Format follows
 [Keep a Changelog](https://keepachangelog.com/), and the project aims to adhere
 to [Semantic Versioning](https://semver.org/).
 
+## [Unreleased]
+
+_Nothing yet — `0.4.0.dev0` development cycle._
+
 ## [0.3.0] — 2026-06-16
 
 ### Added
