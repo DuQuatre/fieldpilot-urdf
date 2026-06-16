@@ -118,12 +118,39 @@ class Link(URDFBaseModel):
     collisions: list[Collision] = Field(default_factory=list)
 
 
+# --- loop closures ---------------------------------------------------------
+# Standard URDF is a strict tree. A closed-loop mechanism is represented as its
+# spanning-tree URDF (the usual links/joints) plus one or more LoopClosures that
+# pin two link-fixed frames together. Loops are an overlay: build_graph / FK /
+# is_tree keep using only `joints`, so every tree invariant and XML round-trip
+# is preserved. Loops are built programmatically (not parsed from standard URDF).
+
+class FrameRef(URDFBaseModel):
+    """A frame rigidly fixed to a tree link — the link frame, optionally offset."""
+    link: str
+    origin: Optional[Origin] = None   # pose of this frame in the link frame
+
+
+class LoopClosure(URDFBaseModel):
+    """A holonomic constraint reconnecting two tree links into a closed loop.
+
+    `a` and `b` are two link-fixed frames required to coincide (a loop has no
+    kinematic parent/child). `kind` sets how many DOF the closure removes:
+    ``point`` = 3 (positions coincide), ``fixed`` = 6 (full pose).
+    """
+    name: str
+    a: FrameRef
+    b: FrameRef
+    kind: Literal["point", "fixed"] = "point"
+
+
 # --- root ------------------------------------------------------------------
 
 class Robot(URDFBaseModel):
     name: str
     links: list[Link] = Field(default_factory=list)
     joints: list[Joint] = Field(default_factory=list)
+    loops: list[LoopClosure] = Field(default_factory=list)
 
     @model_validator(mode="after")
     def _check_joint_references(self) -> "Robot":
@@ -134,6 +161,16 @@ class Robot(URDFBaseModel):
                     raise ValueError(
                         f"joint '{j.name}': {role} link '{ref}' not in <robot>"
                     )
+        for lp in self.loops:
+            for side, fr in (("a", lp.a), ("b", lp.b)):
+                if fr.link not in link_names:
+                    raise ValueError(
+                        f"loop '{lp.name}': {side} link '{fr.link}' not in <robot>"
+                    )
+            if lp.a.link == lp.b.link:
+                raise ValueError(
+                    f"loop '{lp.name}': both sides reference the same link '{lp.a.link}'"
+                )
         return self
 
     def link(self, name: str) -> Link:

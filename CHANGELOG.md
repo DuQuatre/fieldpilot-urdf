@@ -6,7 +6,16 @@ to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
-_Nothing yet — `0.5.0.dev0` development cycle._
+### Added
+- **Closed-loop modelling + constraint deriver** — `LoopClosure` / `FrameRef`
+  model a closed kinematic loop as a spanning-tree URDF plus frame-coincidence
+  constraints (`point` removes 3 DOF, `fixed` removes 6). `loops.derive_loop_constraints`
+  turns them into symbolic `c(q) = 0` in the tree coordinates (reusing
+  `SymbolicDynamics`' frames — no duplicate FK), with `loops.lambdify_loop_residual`
+  (assembly check) and `loops.mobility` (closed-loop DOF). `loops` defaults to
+  `[]`, isn't parsed from standard URDF, and leaves the tree FK / `is_tree` /
+  XML round-trip untouched. Needs the `[dynamics]` extra; the constrained-dynamics
+  solver that consumes these constraints is a planned follow-up.
 
 ## [0.4.0] — 2026-06-16
 

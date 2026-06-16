@@ -261,6 +261,20 @@ class SymbolicDynamics:
     def n_dof(self) -> int:
         return len(self.q)
 
+    def frame_pose_symbolic(self, link_id: str):
+        """Return the *symbolic* ``(R, p)`` of a link frame in the world frame,
+        in terms of ``self.q`` (the un-substituted twin of :meth:`link_pose`).
+
+        ``R`` is a 3x3 SymPy matrix whose columns are the link axes in world;
+        ``p`` is a 3x1 SymPy matrix of the link origin's world position. Used by
+        :mod:`fieldpilot_urdf.loops` to derive loop-closure constraints.
+        """
+        import sympy as sp
+        frame = self._link_frames[link_id]
+        R = sp.Matrix.hstack(*[v.to_matrix(self.N) for v in (frame.x, frame.y, frame.z)])
+        p = self._link_origins[link_id].pos_from(self.O).to_matrix(self.N)
+        return R, p
+
     def link_pose(self, link_id: str, q: dict[str, float] | None = None):
         """Return ``(R, p)`` of a link's body frame in the world frame at
         configuration ``q`` (a ``{joint_name: value}`` dict; unset joints are 0).
