@@ -21,6 +21,7 @@ GitHub and get a working kinematic model in three lines.
 pip install fieldpilot-urdf                # core (parse, FK, IK, validation)
 pip install "fieldpilot-urdf[mesh]"        # + mesh-aware self-collision (trimesh)
 pip install "fieldpilot-urdf[viz]"         # + kinematic-tree / 3D-pose renderers
+pip install "fieldpilot-urdf[dynamics]"    # + Kane's-method symbolic dynamics (sympy)
 pip install "fieldpilot-urdf[all]"         # everything
 ```
 
@@ -91,6 +92,26 @@ print(report.verdict, "—", report.summary)   # CONFIRMED / REFUTED / INCONCLUS
 *(The natural-language front-end that generates hypotheses from a free-text
 symptom via an LLM is part of [FieldPilot](https://github.com/DuQuatre) SaaS.)*
 
+### Symbolic dynamics (needs the `[dynamics]` extra)
+
+```python
+from fieldpilot_urdf.dynamics import SymbolicDynamics
+
+dyn = SymbolicDynamics(robot)                 # Kane's method on the kinematic tree
+print(dyn.n_dof)                              # actuated DOF
+print(dyn.mass_matrix)                        # symbolic M(q)
+print(dyn.forcing)                            # symbolic F(q, q̇, τ) = τ − C(q,q̇)q̇ − G(q)
+
+# Forward dynamics as a NumPy callable, ready for scipy.integrate.solve_ivp:
+fwd = dyn.lambdify_forward_dynamics()         # (q, u, tau) -> q̈   (solves M·q̈ = F)
+qdd = fwd([0.0] * dyn.n_dof, [0.0] * dyn.n_dof, [0.0] * dyn.n_dof)
+```
+
+Tree (serial) robots only in this release. Joint-origin frames follow URDF's
+`Rz(yaw)·Ry(pitch)·Rx(roll)` convention, so `dyn.link_pose(link, q)` matches
+`forward_kinematics` to machine precision. Closed-loop mechanisms and
+multi-DOF joints (`floating`/`planar`/`spherical`) raise `UnsupportedSystemError`.
+
 ## What you can do
 
 | Capability | API |
@@ -104,6 +125,7 @@ symptom via an LLM is part of [FieldPilot](https://github.com/DuQuatre) SaaS.)*
 | 8 lint rules (R001–R008) | `run_all`, `summary` |
 | Deterministic auto-repair | `repair` |
 | Two-tier symbolic fault diagnosis | `diagnose` |
+| Symbolic dynamics (Kane's method) | `SymbolicDynamics` |
 | Render kinematic tree / 3D pose | `render_kinematic_tree`, `render_pose_3d` |
 | Local robot registry | `save_robot`, `load_robot`, `list_robots` |
 
