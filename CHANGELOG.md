@@ -7,6 +7,16 @@ to [Semantic Versioning](https://semver.org/).
 ## [Unreleased]
 
 ### Added
+- **Closed-loop (constrained) dynamics** — `constrained.ConstrainedDynamics`
+  (Lagrange multipliers over SymPy's `LagrangesMethod`) plus the high-level
+  `constrained.constrained_dynamics(robot)`, which wires a `Robot` with `loops`
+  end-to-end: tree Lagrangian + loop-closure constraints → augmented system
+  `[M, -Aᵀ; A, 0][q̈; λ] = [F; -Ȧ q̇]` with a `(q, q̇) → (q̈, λ)` forward-dynamics
+  callable. Reduces to the unconstrained tree dynamics when there are no loops.
+  Index-3 DAE: requires full-rank (non-redundant) constraints at the evaluated
+  state; integration-time drift stabilization is a follow-up. Ported from the
+  MecAI project (MIT). Completes the closed-loop chain (model → constraints →
+  Lagrangian → solver).
 - **Tree Lagrangian builder** — `SymbolicDynamics.lagrangian()` returns the
   tree's `L = T − V` as a SymPy expression (kinetic energy of the rigid bodies +
   gravitational potential), cross-validated to match the Kane-based forward
