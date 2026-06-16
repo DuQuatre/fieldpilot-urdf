@@ -6,6 +6,8 @@ to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+_Nothing yet — `0.6.0.dev0` development cycle._
+
 ## [0.5.0] — 2026-06-16
 
 ### Added
