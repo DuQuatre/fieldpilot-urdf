@@ -26,9 +26,10 @@ The augmented system solved at a fixed state is
 **Caveats.** This is an index-3 DAE. The augmented matrix is singular at
 kinematic singularities *and* when the constraints are redundant (e.g. a planar
 ``point`` closure, whose out-of-plane row is identically zero — drop the
-redundant constraint first). Time integration also drifts off the manifold
-without Baumgarte/projection stabilization. Those are documented follow-ups; the
-machinery here is exact at any single assembled, full-constraint-rank state.
+redundant constraint first). Time integration drifts off the manifold unless
+stabilized: :meth:`ConstrainedDynamics.lambdify_forward_dynamics` takes Baumgarte
+gains, and :meth:`ConstrainedDynamics.project` snaps a state back onto the
+manifold exactly (and tolerates redundant constraints via a pseudo-inverse).
 """
 from __future__ import annotations
 
@@ -111,25 +112,72 @@ class ConstrainedDynamics:
         f = sp.lambdify([self.q], self.constraint_jacobian, "numpy")
         return lambda q_vec: np.asarray(f(list(q_vec)), dtype=float).reshape(self.n_constraints, self.n_q)
 
-    def lambdify_forward_dynamics(self) -> Callable:
+    def lambdify_forward_dynamics(self, *, alpha: float = 0.0, beta: float = 0.0) -> Callable:
         """Return ``f(q_vec, qdot_vec) -> (qdd, lambdas)`` solving the augmented
         system. Actuator torques, if any, must be folded into ``forcelist`` /
-        ``lagrangian`` at construction."""
+        ``lagrangian`` at construction.
+
+        **Baumgarte stabilization.** With ``alpha`` (velocity gain) or ``beta``
+        (position gain) non-zero, the acceleration-level constraint target is
+        replaced by ``A q̈ + Ȧ q̇ = −2α (A q̇) − β² c(q)``, so position/velocity
+        drift is fed back toward the manifold during integration instead of left
+        to accumulate. A critically-damped choice is ``alpha = beta``; with both
+        zero (the default) the behaviour is unchanged. Projection
+        (:meth:`project`) is the exact complement — Baumgarte damps drift cheaply
+        every step, projection removes whatever remains.
+        """
         import numpy as np
         import sympy as sp
 
-        n = self.n_q
+        n, m = self.n_q, self.n_constraints
         M_fn = sp.lambdify([self.q, self._u], self.mass_matrix.subs(self._sub), "numpy")
         F_fn = sp.lambdify([self.q, self._u], self.forcing.subs(self._sub), "numpy")
+        stabilize = bool(m) and (alpha != 0.0 or beta != 0.0)
+        if stabilize:
+            A_fn = self.lambdify_constraint_jacobian()
+            c_fn = self.lambdify_constraint_residual()
 
         def forward(q_vec, qdot_vec):
-            q_vec = list(np.asarray(q_vec, dtype=float).ravel())
-            qd_vec = list(np.asarray(qdot_vec, dtype=float).ravel())
-            M = np.asarray(M_fn(q_vec, qd_vec), dtype=float)
-            F = np.asarray(F_fn(q_vec, qd_vec), dtype=float).ravel()
+            qv = list(np.asarray(q_vec, dtype=float).ravel())
+            qd = np.asarray(qdot_vec, dtype=float).ravel()
+            M = np.asarray(M_fn(qv, list(qd)), dtype=float)
+            F = np.asarray(F_fn(qv, list(qd)), dtype=float).ravel()
+            if stabilize:
+                A = A_fn(qv)
+                c = c_fn(qv)
+                F[n:] = F[n:] - 2.0 * alpha * (A @ qd) - (beta ** 2) * c
             sol = np.linalg.solve(M, F)
             return sol[:n], sol[n:]
         return forward
+
+    def project(self, q_vec, qdot_vec, *, tol: float = 1e-12, max_iter: int = 100):
+        """Project a state back onto the constraint manifold and return
+        ``(q, q̇)`` corrected so that ``c(q) ≈ 0`` and ``A q̇ ≈ 0``.
+
+        Position drift is removed by Newton iteration ``q ← q − A⁺ c(q)``
+        (pseudo-inverse, so redundant or rank-deficient constraints — e.g. a
+        planar ``point`` closure — are handled gracefully); velocity drift by the
+        single projection ``q̇ ← q̇ − A⁺ (A q̇)``. With no constraints the state is
+        returned unchanged. Use after each integration step (optionally with
+        Baumgarte gains) to keep a closed-loop simulation on the manifold.
+        """
+        import numpy as np
+
+        q = np.array(q_vec, dtype=float).ravel()
+        qd = np.array(qdot_vec, dtype=float).ravel()
+        if self.n_constraints == 0:
+            return q, qd
+
+        A_fn = self.lambdify_constraint_jacobian()
+        c_fn = self.lambdify_constraint_residual()
+        for _ in range(max_iter):
+            c = c_fn(q)
+            if np.linalg.norm(c) <= tol:
+                break
+            q = q - np.linalg.pinv(A_fn(q)) @ c
+        A = A_fn(q)
+        qd = qd - np.linalg.pinv(A) @ (A @ qd)
+        return q, qd
 
 
 def constrained_dynamics(robot, *, gravity=(0.0, 0.0, -9.81), simplify=False) -> ConstrainedDynamics:

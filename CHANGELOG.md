@@ -6,7 +6,14 @@ to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
-_Nothing yet — `0.6.0.dev0` development cycle._
+### Added
+- **Closed-loop DAE drift stabilization** — `ConstrainedDynamics` now keeps a
+  closed-loop simulation on its constraint manifold two ways:
+  `lambdify_forward_dynamics(alpha=, beta=)` adds **Baumgarte** feedback
+  (`A q̈ + Ȧ q̇ = −2α(A q̇) − β² c`) so drift is damped cheaply each step, and
+  `project(q, q̇)` snaps a drifted state back exactly (`q ← q − A⁺ c`,
+  `q̇ ← q̇ − A⁺(A q̇)`) — the pseudo-inverse also tolerates redundant constraints
+  (e.g. a planar `point` closure). Completes the closed-loop dynamics path.
 
 ## [0.5.0] — 2026-06-16
 
