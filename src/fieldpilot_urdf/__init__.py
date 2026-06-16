@@ -25,8 +25,8 @@ from .fk import forward_kinematics, joint_motion, origin_to_T, rotation_around_a
 from .graph import build_graph, chain, is_tree, joints_on_path, leaf_links, root_links, subtree
 from .loader import from_file, from_xml, to_xml
 from .models import (
-    Box, Collision, Cylinder, Geometry, Inertia, Inertial, Joint, JointLimit,
-    Link, Mesh, Origin, Robot, Sphere, Visual,
+    Box, Collision, Cylinder, FrameRef, Geometry, Inertia, Inertial, Joint,
+    JointLimit, Link, LoopClosure, Mesh, Origin, Robot, Sphere, Visual,
 )
 from .repair import Patch, REPAIRS, UNFIXABLE_CODES, repair
 from .storage import (
@@ -50,6 +50,7 @@ __all__ = [
     "from_file", "from_xml", "to_xml",
     "Box", "Collision", "Cylinder", "Geometry", "Inertia", "Inertial",
     "Joint", "JointLimit", "Link", "Mesh", "Origin", "Robot", "Sphere", "Visual",
+    "FrameRef", "LoopClosure",
     "build_graph", "chain", "is_tree", "joints_on_path", "leaf_links",
     "root_links", "subtree",
     "Finding", "RULES", "run_all", "summary",
