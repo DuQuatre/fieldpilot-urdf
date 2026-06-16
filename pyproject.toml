@@ -38,7 +38,10 @@ viz = ["graphviz>=0.20", "matplotlib>=3.8"]      # tree + mesh-free pose rendere
 # so the light pose/tree renderers don't drag in pyrender. Needs a headless GL
 # backend at runtime (EGL by default; osmesa for pure software).
 meshviz = ["urchin>=0.0.27", "pyrender>=0.1.45", "fieldpilot-urdf[viz]"]
-all = ["fieldpilot-urdf[mesh,viz,meshviz]"]
+# Symbolic dynamics (Kane's method): mass matrix, forcing, forward dynamics.
+# Kept lazy + optional so the kinematics path doesn't pull in SymPy.
+dynamics = ["sympy>=1.12"]
+all = ["fieldpilot-urdf[mesh,viz,meshviz,dynamics]"]
 dev = ["pytest>=8.0", "fieldpilot-urdf[all]"]
 
 [project.urls]
