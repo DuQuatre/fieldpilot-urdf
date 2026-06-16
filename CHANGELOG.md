@@ -6,6 +6,8 @@ to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [0.6.0] — 2026-06-16
+
 ### Added
 - **Closed-loop DAE drift stabilization** — `ConstrainedDynamics` now keeps a
   closed-loop simulation on its constraint manifold two ways:
