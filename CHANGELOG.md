@@ -6,6 +6,8 @@ to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [0.4.0] — 2026-06-16
+
 ### Added
 - **Graph fault propagation & root-cause ranking** — `fault_propagation`
   module: `affected_links(robot, faulty_id)` (downstream links of a faulty
