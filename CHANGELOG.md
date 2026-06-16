@@ -6,7 +6,15 @@ to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
-_Nothing yet — `0.4.0.dev0` development cycle._
+### Added
+- **Graph fault propagation & root-cause ranking** — `fault_propagation`
+  module: `affected_links(robot, faulty_id)` (downstream links of a faulty
+  joint/link), `criticality(robot, faulty_id)` (mass-weighted impact), and
+  `rank_root_causes(robot, observed_links)` (ranks suspect joints by
+  precision × recall over their downstream set, with a specificity tie-breaker).
+  Pure NetworkX, in the core install — no new dependency. Pairs with
+  `diagnose`: ranked suspects can be fed in as hypotheses. Ported from the
+  MecAI project (MIT) and re-targeted from sensors onto links.
 
 ## [0.3.0] — 2026-06-16
 
