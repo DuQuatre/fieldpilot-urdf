@@ -92,6 +92,24 @@ print(report.verdict, "—", report.summary)   # CONFIRMED / REFUTED / INCONCLUS
 *(The natural-language front-end that generates hypotheses from a free-text
 symptom via an LLM is part of [FieldPilot](https://github.com/DuQuatre) SaaS.)*
 
+### Localise a fault on the kinematic graph
+
+```python
+from fieldpilot_urdf import affected_links, criticality, rank_root_causes
+
+# Which links does a faulty joint drag down, and how much mass is at stake?
+affected_links(robot, "shoulder_pan_joint")   # {'upper_arm_link', 'forearm_link', 'wrist_1_link', ...}
+criticality(robot, "shoulder_pan_joint")      # 0.0–1.0, mass-weighted downstream impact
+
+# Reverse: a tech reports the wrist + tool went limp — which joint best explains it?
+ranked = rank_root_causes(robot, ["wrist_3_link", "tool0"])
+print(ranked[0].target, round(ranked[0].score, 3))   # suspect joint, precision×recall score
+```
+
+Pure NetworkX graph reasoning — deterministic, in the core install. The ranked
+suspects can feed straight into `diagnose` as hypotheses. *(The LLM/NL symptom
+front-end stays in [FieldPilot](https://github.com/DuQuatre) SaaS.)*
+
 ### Symbolic dynamics (needs the `[dynamics]` extra)
 
 ```python
@@ -125,6 +143,7 @@ multi-DOF joints (`floating`/`planar`/`spherical`) raise `UnsupportedSystemError
 | 8 lint rules (R001–R008) | `run_all`, `summary` |
 | Deterministic auto-repair | `repair` |
 | Two-tier symbolic fault diagnosis | `diagnose` |
+| Fault propagation & root-cause ranking | `affected_links`, `criticality`, `rank_root_causes` |
 | Symbolic dynamics (Kane's method) | `SymbolicDynamics` |
 | Render kinematic tree / 3D pose | `render_kinematic_tree`, `render_pose_3d` |
 | Local robot registry | `save_robot`, `load_robot`, `list_robots` |

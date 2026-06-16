@@ -41,6 +41,9 @@ from .trajectory import (
     StepFinding, WorkspaceResult, check_trajectory, sample_workspace,
     trajectory_summary,
 )
+from .fault_propagation import (
+    RootCauseCandidate, affected_links, criticality, rank_root_causes,
+)
 
 __all__ = [
     "__version__",
@@ -61,4 +64,5 @@ __all__ = [
     "IKResult", "solve_ik",
     "expand_xacro", "fetch_meshes", "fetch_urdf", "import_urdf",
     "infer_package_root", "package_uri_parts", "resolve_includes", "substitute_find",
+    "RootCauseCandidate", "affected_links", "criticality", "rank_root_causes",
 ]
