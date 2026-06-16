@@ -7,6 +7,13 @@ to [Semantic Versioning](https://semver.org/).
 ## [Unreleased]
 
 ### Added
+- **Tree Lagrangian builder** — `SymbolicDynamics.lagrangian()` returns the
+  tree's `L = T − V` as a SymPy expression (kinetic energy of the rigid bodies +
+  gravitational potential), cross-validated to match the Kane-based forward
+  dynamics. This is the input a Lagrange-multiplier solver needs to consume the
+  loop-closure constraints from `loops`, so closed-loop dynamics is now
+  unblocked end-to-end (the `ConstrainedDynamics` solver drop-in remains the
+  final follow-up).
 - **Closed-loop modelling + constraint deriver** — `LoopClosure` / `FrameRef`
   model a closed kinematic loop as a spanning-tree URDF plus frame-coincidence
   constraints (`point` removes 3 DOF, `fixed` removes 6). `loops.derive_loop_constraints`
