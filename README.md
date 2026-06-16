@@ -146,6 +146,7 @@ multi-DOF joints (`floating`/`planar`/`spherical`) raise `UnsupportedSystemError
 | Fault propagation & root-cause ranking | `affected_links`, `criticality`, `rank_root_causes` |
 | Symbolic dynamics (Kane's method) | `SymbolicDynamics` |
 | Closed-loop modelling & constraint deriver | `LoopClosure`, `loops.derive_loop_constraints` |
+| Closed-loop (constrained) dynamics | `constrained.constrained_dynamics` |
 | Render kinematic tree / 3D pose | `render_kinematic_tree`, `render_pose_3d` |
 | Local robot registry | `save_robot`, `load_robot`, `list_robots` |
 
