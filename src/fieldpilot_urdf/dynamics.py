@@ -240,6 +240,10 @@ class SymbolicDynamics:
                 loads.append((child_origin, tau_i * axis_vec_parent))
                 loads.append((parent_origin, -tau_i * axis_vec_parent))
 
+        # Keep the bodies for the Lagrangian builder (CoM velocities + inertias
+        # are already set on them above).
+        self._bodies = bodies
+
         # Kinematic differential equations: u_i = qdot_i.
         kd_eqs = [u_syms[i] - sp.diff(q_syms[i], self.t) for i in range(len(q_syms))]
 
@@ -274,6 +278,28 @@ class SymbolicDynamics:
         R = sp.Matrix.hstack(*[v.to_matrix(self.N) for v in (frame.x, frame.y, frame.z)])
         p = self._link_origins[link_id].pos_from(self.O).to_matrix(self.N)
         return R, p
+
+    def lagrangian(self, *, simplify: bool = True):
+        """Return the tree's Lagrangian ``L = T − V`` as a SymPy expression in
+        ``self.q`` and their time derivatives.
+
+        ``T`` is the total kinetic energy of the rigid bodies (translational +
+        rotational, in terms of ``q̇``); ``V`` is gravitational potential energy,
+        ``V = −Σ mᵢ (g · rᵢ)`` with ``g`` = :attr:`gravity` and ``rᵢ`` the link
+        CoM positions. This is the input a Lagrange-multiplier solver needs to
+        consume the constraints from :mod:`fieldpilot_urdf.loops`; for a tree it
+        is equivalent to the Kane-based ``mass_matrix``/``forcing`` already built
+        here. Pass ``simplify=False`` to skip ``sympy.simplify`` on large robots.
+        """
+        import sympy as sp
+        T = sum((b.kinetic_energy(self.N) for b in self._bodies), sp.Integer(0))
+        gx, gy, gz = (sp.Float(g) for g in self.gravity)
+        V = sp.Integer(0)
+        for b in self._bodies:
+            r = b.masscenter.pos_from(self.O).to_matrix(self.N)
+            V -= b.mass * (gx * r[0] + gy * r[1] + gz * r[2])
+        L = T - V
+        return sp.simplify(L) if simplify else L
 
     def link_pose(self, link_id: str, q: dict[str, float] | None = None):
         """Return ``(R, p)`` of a link's body frame in the world frame at

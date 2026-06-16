@@ -183,3 +183,66 @@ def test_freefall_conserves_energy():
     sol = scipy_integrate.solve_ivp(rhs, (0.0, 0.6), y0, max_step=1e-3, rtol=1e-9, atol=1e-12)
     e_end = energy(sol.y[0, -1], sol.y[1, -1])
     assert abs(e_end - e0) < 1e-3 * max(1.0, abs(e0))
+
+
+# --- tree Lagrangian (step ②) ----------------------------------------------
+
+def _two_link_arm():
+    def inr():
+        return Inertial(origin=Origin(xyz=(0.5, 0, 0)), mass=1.0,
+                        inertia=Inertia(ixx=0.0, iyy=0.1, izz=0.1))
+    return Robot(
+        name="arm",
+        links=[Link(name="base"), Link(name="l1", inertial=inr()),
+               Link(name="l2", inertial=inr())],
+        joints=[
+            Joint(name="j1", type="revolute", parent="base", child="l1",
+                  origin=Origin(xyz=(0, 0, 0)), axis=(0, 1, 0), limit=_lim()),
+            Joint(name="j2", type="revolute", parent="l1", child="l2",
+                  origin=Origin(xyz=(1, 0, 0)), axis=(0, 1, 0), limit=_lim()),
+        ],
+    )
+
+
+def test_lagrangian_matches_kane():
+    """The Lagrangian's equations of motion must agree with the already-validated
+    Kane forward dynamics for a tree (no constraints), at sample states."""
+    import sympy as sp
+    from sympy.physics.mechanics import LagrangesMethod
+
+    dyn = SymbolicDynamics(_two_link_arm(), gravity=(0, 0, -9.81))
+    L = dyn.lagrangian(simplify=False)
+    LM = LagrangesMethod(L, dyn.q)
+    LM.form_lagranges_equations()
+
+    qd = [sp.diff(qi, dyn.t) for qi in dyn.q]
+    subs = {qd[i]: dyn.u[i] for i in range(len(qd))}     # q̇ -> Kane's speed symbols
+    M_fn = sp.lambdify([dyn.q, dyn.u], LM.mass_matrix.subs(subs), "numpy")
+    F_fn = sp.lambdify([dyn.q, dyn.u], LM.forcing.subs(subs), "numpy")
+
+    kane = dyn.lambdify_forward_dynamics()
+    zero_tau = [0.0] * dyn.n_dof
+    for qv, uv in [([0.3, -0.4], [0.5, 0.2]),
+                   ([1.0, 0.7], [-0.3, 0.6]),
+                   ([0.0, 0.0], [0.0, 0.0])]:
+        M = np.asarray(M_fn(qv, uv), dtype=float)
+        F = np.asarray(F_fn(qv, uv), dtype=float).ravel()
+        qdd_lag = np.linalg.solve(M, F)
+        qdd_kane = kane(qv, uv, zero_tau)
+        assert np.allclose(qdd_lag, qdd_kane, atol=1e-9), (qv, uv, qdd_lag, qdd_kane)
+
+
+def test_lagrangian_zero_at_rest_neutral():
+    # At q=0 the arm lies along +x (CoMs at z=0 → V=0) and at rest T=0 → L=0.
+    import sympy as sp
+    dyn = SymbolicDynamics(_two_link_arm())
+    L = dyn.lagrangian(simplify=False)
+    qd = [sp.diff(qi, dyn.t) for qi in dyn.q]
+    L0 = L.subs({d: 0 for d in qd}).subs({qi: 0 for qi in dyn.q})
+    assert abs(float(L0)) < 1e-9
+
+
+def test_lagrangian_simplify_runs():
+    dyn = SymbolicDynamics(_pendulum((0, 1, 0)))
+    L = dyn.lagrangian(simplify=True)
+    assert L.free_symbols          # a non-trivial expression in q, q̇
