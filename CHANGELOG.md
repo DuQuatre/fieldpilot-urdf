@@ -6,7 +6,13 @@ to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
-_Nothing yet — `0.9.0.dev0` development cycle._
+### Added
+- **Example: `examples/ducky_diagnosis.py`** — a "Rubber Ducky" robot
+  fault-diagnosis transcript: a scripted engineer↔assistant dialogue where every
+  conclusion is backed by a real call (`run_all` → `solve_ik` → `rank_root_causes`
+  → `diagnose` → `affected_links`/`criticality`). Shows the deterministic MDG
+  reasoning core localising and confirming a dead base-yaw motor end to end.
+  Core install only.
 
 ## [0.8.0] — 2026-06-17
 
