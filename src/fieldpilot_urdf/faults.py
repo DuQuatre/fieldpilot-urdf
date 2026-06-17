@@ -66,6 +66,29 @@ def freeze_joint_at(robot: Robot, joint_name: str, angle: float) -> Robot:
     return robot
 
 
+def misconfigure_limit(
+    robot: Robot, joint_name: str, *,
+    lower: float | None = None, upper: float | None = None,
+) -> Robot:
+    """Simulate a mis-set joint travel ``<limit>`` — a commissioning/config error
+    that narrows (or shifts) a joint's reachable range without freezing it.
+
+    Overwrites the given bound(s) on ``joint_name``'s limit; an omitted bound is
+    left as-is. Unlike :func:`freeze_joint`/:func:`freeze_joint_at` the joint
+    still moves — it just can't travel as far — so IK that needs the clipped range
+    will fail to converge. Mutates and returns ``robot``. Raises ``KeyError`` if
+    the joint is unknown or has no ``<limit>`` to misconfigure.
+    """
+    j = robot.joint(joint_name)  # raises KeyError on an unknown joint name
+    if j.limit is None:
+        raise KeyError(f"joint '{joint_name}' has no <limit> to misconfigure")
+    if lower is not None:
+        j.limit.lower = lower
+    if upper is not None:
+        j.limit.upper = upper
+    return robot
+
+
 def fault_source_tag(joint_name: str, origin: str) -> str:
     """Canonical ``source_file`` tag for a persisted fault fixture, so the CLI
     can recognise (and skip) a fixture it already created."""

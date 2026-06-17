@@ -6,7 +6,19 @@ to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
-_Nothing yet._
+### Added
+- **Third fault mode in `diagnose` — `limit_misconfig`.** A mis-set joint travel
+  `<limit>` that clips the joint's range without freezing it — the first *non-lock*
+  fault (`motor_dead`/`joint_stuck` both just hold an axis fixed). `Hypothesis`
+  gains `bad_lower` / `bad_upper` (at least one required, enforced by a validator);
+  the simulator narrows the limit on a copy and re-runs IK. Registered for
+  `cant_reach` only — a static range change can't alter a fixed commanded pose, so
+  it has no sound mapping to `self_collision` (passing that pair returns
+  INCONCLUSIVE). A suspect joint with no `<limit>` yields INCONCLUSIVE rather than
+  aborting the loop.
+- **`misconfigure_limit(robot, joint, *, lower=None, upper=None)`** (in `faults`)
+  — overwrite a joint's travel bound(s); the injection primitive behind
+  `limit_misconfig`. Raises `KeyError` if the joint is unknown or has no `<limit>`.
 
 ## [1.1.0] — 2026-06-17
 
