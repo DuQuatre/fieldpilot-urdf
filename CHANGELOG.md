@@ -6,6 +6,15 @@ to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [1.6.0] — 2026-06-17
+
+Strengthens **inverse kinematics**. `solve_ik_multi` surfaces *all* distinct
+solutions to a pose (elbow-up / elbow-down and other joint flips) rather than
+just one, and `solve_ik` gains opt-in random-restart robustness for hard targets
+— both via cheap multi-seed restarts over the existing solver. No new
+dependencies; the default single-shot `solve_ik` is unchanged. Additive over the
+1.5 public API. 256 tests.
+
 ### Added
 - **Multi-solution IK — `solve_ik_multi`.** Many arms reach a pose more than one
   way (elbow-up / elbow-down, joint flips); `solve_ik` returns one, this returns
@@ -355,6 +364,7 @@ standalone, pure-Python, pip-installable package (AGPL-3.0).
   spare-parts BOM, and multi-tenant hosting are **not** part of this package —
   they live in FieldPilot SaaS.
 
+[1.6.0]: https://github.com/DuQuatre/fieldpilot-urdf/releases/tag/v1.6.0
 [1.5.0]: https://github.com/DuQuatre/fieldpilot-urdf/releases/tag/v1.5.0
 [1.4.0]: https://github.com/DuQuatre/fieldpilot-urdf/releases/tag/v1.4.0
 [1.3.0]: https://github.com/DuQuatre/fieldpilot-urdf/releases/tag/v1.3.0
