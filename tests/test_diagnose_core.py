@@ -9,11 +9,15 @@ Run: python3 -m pytest app/urdf/test_diagnose_core.py -q  (from pydexpi-server/)
 """
 from __future__ import annotations
 
+import math
+
 import pytest
+from pydantic import ValidationError
 
 from fieldpilot_urdf import from_xml, forward_kinematics
 from fieldpilot_urdf.diagnose_core import Hypothesis, Symptom, Verdict, diagnose
 from fieldpilot_urdf.faults import inject_motor_fault
+from fieldpilot_urdf.models import Box, Collision, Joint, JointLimit, Link, Origin, Robot
 
 # 3 links + 2 revolute joints + a wrist offset (fixed) so `tool` moves with BOTH
 # joints: shoulder rotates everything about z; elbow rotates the wrist offset.
@@ -180,3 +184,90 @@ def test_mixed_fault_modes_picks_the_reproducing_one(clean):
     rep = diagnose(from_xml(SAMPLE), sym, hyps)
     assert rep.verdict is Verdict.CONFIRMED
     assert rep.suspect_joint == "shoulder_joint"
+
+
+# --- self_collision symptom -------------------------------------------------
+# A 2-joint folding arm with box collision geometry: base, upper and fore each
+# carry a 0.2 cube. Extended (j2=0) the fore sits at (1,0,0), clear of the base;
+# jamming the elbow at pi folds the fore back onto the base (0,0,0) — a
+# non-adjacent pair, so it registers as a real self-collision.
+
+def _box(off):
+    return [Collision(origin=Origin(xyz=off), geometry=Box(size=(0.2, 0.2, 0.2)))]
+
+
+def _lim():
+    return JointLimit(lower=-4.0, upper=4.0, effort=1.0, velocity=1.0)
+
+
+@pytest.fixture
+def fold():
+    return Robot(
+        name="fold",
+        links=[Link(name="base", collisions=_box((0, 0, 0))),
+               Link(name="upper", collisions=_box((0.5, 0, 0))),
+               Link(name="fore", collisions=_box((0.5, 0, 0)))],
+        joints=[Joint(name="j1", type="revolute", parent="base", child="upper",
+                      origin=Origin(xyz=(0, 0, 0)), axis=(0, 0, 1), limit=_lim()),
+                Joint(name="j2", type="revolute", parent="upper", child="fore",
+                      origin=Origin(xyz=(0.5, 0, 0)), axis=(0, 0, 1), limit=_lim())],
+    )
+
+
+CMD = {"j1": 0.0, "j2": 0.0}   # extended pose: collision-free on a healthy arm
+
+
+def test_self_collision_healthy_pose_is_clear(fold):
+    from fieldpilot_urdf import detect_self_collisions
+    assert detect_self_collisions(fold, q=CMD) == []
+
+
+def test_self_collision_joint_stuck_confirmed(fold):
+    """Elbow jammed at pi folds the fore onto the base at the commanded pose."""
+    sym = Symptom(kind="self_collision", at_config=CMD, colliding_links=("base", "fore"))
+    rep = diagnose(fold, sym, [Hypothesis(suspect_joint="j2", fault_mode="joint_stuck", stuck_at=math.pi)])
+    assert rep.verdict is Verdict.CONFIRMED
+    assert rep.tier == 1
+    assert ["base", "fore"] in rep.evidence["faulted_collisions"]
+    assert rep.evidence["baseline_collisions"] == []
+
+
+def test_self_collision_motor_dead_refuted(fold):
+    """A dead elbow locks at 0 = the commanded value, so nothing changes."""
+    sym = Symptom(kind="self_collision", at_config=CMD, colliding_links=("base", "fore"))
+    rep = diagnose(fold, sym, [Hypothesis(suspect_joint="j2", fault_mode="motor_dead")])
+    assert rep.verdict is Verdict.REFUTED
+
+
+def test_self_collision_inconclusive_when_commanded_pose_collides(fold):
+    """If the commanded pose itself self-collides on a healthy arm, the clash is
+    not attributable to a joint fault."""
+    sym = Symptom(kind="self_collision", at_config={"j1": 0.0, "j2": math.pi})
+    rep = diagnose(fold, sym, [Hypothesis(suspect_joint="j2", fault_mode="joint_stuck", stuck_at=0.5)])
+    assert rep.verdict is Verdict.INCONCLUSIVE
+
+
+def test_self_collision_reported_pair_filters(fold):
+    """A clash is produced, but the tech reported a different (non-colliding)
+    pair — the specific hypothesis must be REFUTED, not CONFIRMED."""
+    sym = Symptom(kind="self_collision", at_config=CMD, colliding_links=("base", "upper"))
+    rep = diagnose(fold, sym, [Hypothesis(suspect_joint="j2", fault_mode="joint_stuck", stuck_at=math.pi)])
+    assert rep.verdict is Verdict.REFUTED
+
+
+def test_self_collision_unknown_joint_raises(fold):
+    sym = Symptom(kind="self_collision", at_config={"nope": 0.0})
+    with pytest.raises(KeyError):
+        diagnose(fold, sym, [Hypothesis(suspect_joint="j2", fault_mode="motor_dead")])
+
+
+# --- Symptom validation -----------------------------------------------------
+
+def test_cant_reach_requires_target():
+    with pytest.raises(ValidationError):
+        Symptom(kind="cant_reach")
+
+
+def test_self_collision_requires_at_config():
+    with pytest.raises(ValidationError):
+        Symptom(kind="self_collision")

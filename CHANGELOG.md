@@ -7,6 +7,17 @@ to [Semantic Versioning](https://semver.org/).
 ## [Unreleased]
 
 ### Added
+- **Second symptom in `diagnose` — `self_collision`.** Beyond `cant_reach`, the
+  loop now diagnoses a robot that self-collides at a commanded pose: a `Symptom`
+  carries the commanded `at_config` (and optionally the reported `colliding_links`
+  pair), and each fault mode is tested by holding the suspect joint at its lock
+  value and re-checking `detect_self_collisions`. CONFIRMED when the fault drives
+  a non-adjacent pair into contact that was clear on the healthy robot; the
+  commanded pose colliding on the healthy robot is INCONCLUSIVE (not attributable).
+  Both fault modes (`motor_dead`, `joint_stuck`) work against it, so the
+  `(fault_mode, symptom)` registry now covers all four combinations. Tier-0's
+  static scan is scoped to `cant_reach` (a static rule can't explain a
+  configuration-dependent collision).
 - **Second fault mode in `diagnose` — `joint_stuck`.** The diagnosis loop now
   handles a joint *jammed at a reported angle* alongside the existing
   `motor_dead` (dead actuator at the zero pose). `Hypothesis` gains a `stuck_at`
