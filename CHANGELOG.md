@@ -6,6 +6,8 @@ to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [0.9.0] — 2026-06-17
+
 ### Added
 - **Example: `examples/ducky_diagnosis.py`** — a "Rubber Ducky" robot
   fault-diagnosis transcript: a scripted engineer↔assistant dialogue where every
