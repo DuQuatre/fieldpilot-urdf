@@ -6,6 +6,28 @@ to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Added
+- **Velocity kinematics — `fieldpilot_urdf.kinematics`.** The derivative bridge
+  between FK (*where* a link is) and IK (*how to get there*): the geometric
+  Jacobian and what it unlocks. Pure NumPy — no scipy.
+  - **`geometric_jacobian`** returns the 6×n matrix `J` mapping joint velocities
+    to a link's world-frame twist (`[v; w] = J @ qdot`, linear rows over angular).
+    Columns follow the movable joints on the root→link path; `jacobian_joints`
+    gives that ordering. Revolute / continuous / prismatic joints; fixed joints
+    contribute no column.
+  - **`joint_velocity_to_twist`** is the forward-velocity convenience: the
+    world twist of a link for a `{joint: velocity}` dict.
+  - **`manipulability`** gives the Yoshikawa measure (volume of the
+    manipulability ellipsoid, `√det(JJᵀ)`) — a scalar dexterity / distance-from-
+    singularity score.
+  - **`singularity_report`** (→ `SingularityReport`) reports the Jacobian's
+    singular values, `sigma_min`/`sigma_max`, condition number, manipulability,
+    and an `is_singular` flag.
+  - `manipulability` and `singularity_report` take `rows=` to restrict the
+    measure to a task subspace of the 6-row twist (e.g. `rows=(0, 1, 2)` for a
+    position-only measure) — needed for sub-6-DoF arms, whose positional
+    singularities the full 6×n Jacobian masks.
+
 ## [1.9.0] — 2026-06-17
 
 Adds native **mesh format support**. A new `fieldpilot_urdf.mesh` module reads

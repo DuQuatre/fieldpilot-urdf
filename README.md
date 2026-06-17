@@ -90,6 +90,19 @@ print(detect_self_collisions(robot))                    # [(link_a, link_b), ...
 `sample_workspace` and `check_trajectory` round out the layer — reachable
 envelope and a per-step limit/collision check along a path.
 
+**Velocity kinematics** sits between FK and IK: the geometric Jacobian maps joint
+velocities to the end-effector twist, and from it you read off dexterity and
+proximity to a singularity.
+
+```python
+from fieldpilot_urdf import geometric_jacobian, manipulability, singularity_report
+
+J = geometric_jacobian(robot, q, "tool0")               # 6×n: [v; w] = J @ qdot
+print(manipulability(robot, q, "tool0"))                # Yoshikawa dexterity measure
+rep = singularity_report(robot, q, "tool0")             # σ_min, condition number, is_singular
+print(rep.is_singular, rep.condition_number)
+```
+
 ### Render (needs the `[viz]` extra)
 
 ```python

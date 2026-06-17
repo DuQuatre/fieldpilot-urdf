@@ -36,6 +36,10 @@ from .storage import (
     delete_robot, list_robots, load_meta, load_resolver, load_robot, save_robot,
 )
 from .ik import IKResult, solve_ik, solve_ik_multi
+from .kinematics import (
+    SingularityReport, geometric_jacobian, jacobian_joints,
+    joint_velocity_to_twist, manipulability, singularity_report,
+)
 from .importer import (
     expand_xacro, expand_xacro_local, fetch_meshes, fetch_urdf, import_urdf,
     import_urdf_file, infer_package_root, package_uri_parts, resolve_includes,
@@ -72,6 +76,8 @@ __all__ = [
     "StepFinding", "WorkspaceResult", "check_trajectory", "sample_workspace", "trajectory_summary",
     "PlanResult", "plan_path", "shorten_path", "path_length",
     "IKResult", "solve_ik", "solve_ik_multi",
+    "geometric_jacobian", "jacobian_joints", "joint_velocity_to_twist",
+    "manipulability", "singularity_report", "SingularityReport",
     "expand_xacro", "expand_xacro_local", "fetch_meshes", "fetch_urdf", "import_urdf",
     "import_urdf_file", "infer_package_root", "package_uri_parts", "resolve_includes",
     "resolve_includes_local", "substitute_find",

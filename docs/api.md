@@ -53,6 +53,14 @@ local filesystem, with `package://` resolved via a `package_roots` map), plus
 targets; `solve_ik_multi` returns multiple *distinct* solutions, e.g. elbow-up /
 elbow-down)
 
+**Velocity kinematics** — `geometric_jacobian`, `jacobian_joints`,
+`joint_velocity_to_twist`, `manipulability`, `singularity_report`,
+`SingularityReport` (the 6×n geometric Jacobian mapping `qdot` → world twist
+`[v; w]`; from it: forward velocity, the Yoshikawa manipulability measure, and a
+singular-value singularity report. `manipulability` / `singularity_report` take
+`rows=` to restrict to a task subspace, e.g. `rows=(0,1,2)` for a position-only
+measure on a sub-6-DoF arm)
+
 **Self-collision** — `detect_self_collisions`, `aabb_overlap`,
 `link_collision_aabbs`, `transform_aabb`, `MeshResolver`, `clear_mesh_cache`,
 `unresolved_meshes`
