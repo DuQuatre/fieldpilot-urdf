@@ -379,3 +379,51 @@ def test_reduced_workspace_unknown_target_raises():
     with pytest.raises(KeyError):
         diagnose(from_xml(SAMPLE), sym,
                  [Hypothesis(suspect_joint="shoulder_joint", fault_mode="motor_dead")])
+
+
+# --- auto-hypothesis generation ---------------------------------------------
+# With no hypotheses supplied, diagnose ranks suspect joints from the symptom
+# (rank_root_causes) and tests a motor_dead on each.
+
+def test_auto_generated_cant_reach_confirms_and_marks_report(clean):
+    target = _tool_xyz(clean, {"shoulder_joint": 0.9, "elbow_joint": 0.0})
+    sym = Symptom(kind="cant_reach", target_link="tool", target_xyz=target)
+    rep = diagnose(from_xml(SAMPLE), sym)            # no hypotheses
+    assert rep.verdict is Verdict.CONFIRMED
+    assert rep.suspect_joint == "shoulder_joint"
+    assert rep.auto_generated is True
+    assert rep.fault_mode == "motor_dead"
+
+
+def test_auto_generation_excludes_fixed_joints(clean):
+    target = _tool_xyz(clean, {"shoulder_joint": 0.9, "elbow_joint": 0.0})
+    sym = Symptom(kind="cant_reach", target_link="tool", target_xyz=target)
+    rep = diagnose(from_xml(SAMPLE), sym)
+    # wrist_fixed is a fixed joint — never a dead-motor candidate
+    assert "wrist_fixed" not in rep.evidence["auto_candidates"]
+    assert set(rep.evidence["auto_candidates"]) == {"shoulder_joint", "elbow_joint"}
+
+
+def test_auto_generated_reduced_workspace(clean):
+    rep = diagnose(from_xml(SAMPLE), Symptom(kind="reduced_workspace", target_link="tool"))
+    assert rep.verdict is Verdict.CONFIRMED
+    assert rep.auto_generated is True
+
+
+def test_explicit_hypotheses_are_not_auto_generated(clean):
+    target = _tool_xyz(clean, {"shoulder_joint": 0.9, "elbow_joint": 0.5})
+    sym = Symptom(kind="cant_reach", target_link="tool", target_xyz=target)
+    rep = diagnose(from_xml(SAMPLE), sym,
+                   [Hypothesis(suspect_joint="shoulder_joint", fault_mode="motor_dead")])
+    assert rep.verdict is Verdict.CONFIRMED
+    assert rep.auto_generated is False
+    assert "auto_candidates" not in rep.evidence
+
+
+def test_auto_generation_inconclusive_when_no_candidates(clean):
+    """The root link has no joints above it → nothing to rank → INCONCLUSIVE."""
+    sym = Symptom(kind="cant_reach", target_link="base", target_xyz=(0.0, 0.0, 0.0))
+    rep = diagnose(from_xml(SAMPLE), sym)
+    assert rep.verdict is Verdict.INCONCLUSIVE
+    assert rep.auto_generated is True
+    assert rep.evidence["auto_candidates"] == []

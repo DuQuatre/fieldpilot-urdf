@@ -6,7 +6,18 @@ to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
-_Nothing yet._
+### Added
+- **Auto-hypothesis generation in `diagnose`.** `hypotheses` is now optional —
+  when omitted (or empty), `diagnose` derives candidates from the symptom by
+  ranking suspect joints with `rank_root_causes` (the affected links come from
+  the symptom: `target_link` for `cant_reach`/`reduced_workspace`,
+  `colliding_links` for `self_collision`) and tests a parameter-free `motor_dead`
+  on each (up to `max_auto`, default 5), best-first. Fixed joints are excluded
+  (no motor to kill). The returned `DiagnoseReport` carries `auto_generated=True`
+  and an `evidence["auto_candidates"]` list. Connects the two core diagnostic
+  features (graph root-cause ranking → hypothesis-and-test) into one call; an
+  explicit `hypotheses` list behaves exactly as before. The parametric modes
+  (`joint_stuck`, `limit_misconfig`) still need caller-supplied values.
 
 ## [1.3.0] — 2026-06-17
 
