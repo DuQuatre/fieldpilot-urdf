@@ -6,6 +6,8 @@ to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [0.7.0] — 2026-06-17
+
 ### Added
 - **Example: `examples/closed_loop_sim.py`** — end-to-end closed-loop dynamics
   simulation over time. Builds a mobility-1 4R spatial mechanism (tip pinned to
