@@ -10,14 +10,15 @@ engine standing in for SPICE:
                           the model, re-run the relevant kinematic primitive, and
                           check it reproduces the observed symptom.
 
-This module covers two symptoms — ``cant_reach`` (a link can no longer reach a
-pose) and ``self_collision`` (the robot self-collides at a commanded pose) —
-against three fault modes: ``motor_dead`` (a dead actuator, locked at the zero
-pose), ``joint_stuck`` (a joint jammed at a reported angle), and
-``limit_misconfig`` (a mis-set travel ``<limit>`` that clips the joint's range
-without freezing it; ``cant_reach`` only). The ``(fault_mode, symptom)`` pair
-selects a simulator from ``_SIMULATORS``; that table is the single extension
-point. Hypotheses are supplied by the caller. The
+This module covers three symptoms — ``cant_reach`` (a link can no longer reach a
+pose), ``self_collision`` (the robot self-collides at a commanded pose), and
+``reduced_workspace`` (a link's reachable envelope shrank) — against three fault
+modes: ``motor_dead`` (a dead actuator, locked at the zero pose), ``joint_stuck``
+(a joint jammed at a reported angle), and ``limit_misconfig`` (a mis-set travel
+``<limit>`` that clips the joint's range without freezing it). Not every pair has
+a sound mapping (e.g. ``limit_misconfig`` × ``self_collision`` does not); the
+``(fault_mode, symptom)`` pairs that do are registered in ``_SIMULATORS``, the
+single extension point. Hypotheses are supplied by the caller. The
 verdict half is fully symbolic and deterministic: **no network, no API key.** The
 natural-language front-end that *generates* hypotheses from a technician's report
 via an LLM lives in the companion ``diagnose_nl`` module (gated); this core is the
@@ -25,6 +26,7 @@ open showcase.
 """
 from __future__ import annotations
 
+import math
 from enum import Enum
 from typing import Literal, Optional
 
@@ -35,6 +37,12 @@ from .diagnostics import Finding, run_all
 from .faults import freeze_joint_at, misconfigure_limit
 from .ik import solve_ik
 from .models import Robot
+from .trajectory import sample_workspace
+
+# Workspace sampling is fixed (count + seed) so a baseline and its faulted twin
+# are measured identically — the comparison, not the absolute value, is what counts.
+_WS_SAMPLES = 400
+_WS_SEED = 0
 
 
 class Verdict(str, Enum):
@@ -51,7 +59,7 @@ class Symptom(BaseModel):
       self-collides (optionally a specific ``colliding_links`` pair) when a
       healthy robot would not.
     """
-    kind: Literal["cant_reach", "self_collision"]
+    kind: Literal["cant_reach", "self_collision", "reduced_workspace"]
 
     # cant_reach
     target_link: Optional[str] = None
@@ -62,6 +70,9 @@ class Symptom(BaseModel):
     at_config: dict[str, float] = Field(default_factory=dict)  # commanded joint pose
     colliding_links: Optional[tuple[str, str]] = None          # reported pair, if known
 
+    # reduced_workspace (target_link is the end-effector whose envelope shrank)
+    min_shrinkage: float = 0.1   # fraction the reach must drop for a fault to count
+
     @model_validator(mode="after")
     def _require_fields_for_kind(self) -> "Symptom":
         if self.kind == "cant_reach":
@@ -70,6 +81,9 @@ class Symptom(BaseModel):
         elif self.kind == "self_collision":
             if not self.at_config:
                 raise ValueError("self_collision requires a non-empty at_config")
+        elif self.kind == "reduced_workspace":
+            if self.target_link is None:
+                raise ValueError("reduced_workspace requires target_link")
         return self
 
 
@@ -265,16 +279,80 @@ def _simulate_locked_self_collision(robot: Robot, h: Hypothesis, s: Symptom) -> 
     )
 
 
-# limit_misconfig is registered for cant_reach only: it changes a joint's travel
-# range, which a fixed commanded pose (self_collision) never exercises, so it
-# can't explain a collision there. An unregistered (mode, symptom) pair is simply
-# skipped in the loop below.
+# --- Tier 1: a fault → reduced_workspace -----------------------------------
+# Measure the end-effector's reachable envelope (bounding-box diagonal) on the
+# healthy robot vs the faulted one. Every fault mode shrinks it — a frozen axis
+# removes a DOF, a clipped limit narrows one — so all three apply here.
+
+def _workspace_reach(robot: Robot, target_link: str) -> float:
+    """Scalar 'reach': the diagonal of the reachable-points bounding box."""
+    ws = sample_workspace(robot, target_link, n_samples=_WS_SAMPLES, seed=_WS_SEED,
+                          check_collisions=False)
+    ext = [hi - lo for lo, hi in zip(ws.bbox_min, ws.bbox_max)]
+    return math.sqrt(sum(e * e for e in ext))
+
+
+def _simulate_reduced_workspace(robot: Robot, h: Hypothesis, s: Symptom) -> DiagnoseReport:
+    base_reach = _workspace_reach(robot, s.target_link)
+    if base_reach <= 1e-9:
+        return DiagnoseReport(
+            verdict=Verdict.INCONCLUSIVE, tier=1,
+            suspect_joint=h.suspect_joint, fault_mode=h.fault_mode, confidence=0.0,
+            evidence={"baseline_reach": base_reach},
+            summary=(f"{s.target_link}'s healthy workspace is already degenerate "
+                     f"(reach {base_reach:.3g} m); cannot measure a reduction."),
+        )
+
+    faulted, phrase = _inject_fault(robot, h)
+    if faulted is None:
+        return DiagnoseReport(
+            verdict=Verdict.INCONCLUSIVE, tier=1,
+            suspect_joint=h.suspect_joint, fault_mode=h.fault_mode, confidence=0.0,
+            evidence={"inapplicable": phrase},
+            summary=f"Cannot apply {h.fault_mode} to {h.suspect_joint}: {phrase}.",
+        )
+    faulted_reach = _workspace_reach(faulted, s.target_link)
+    shrinkage = 1.0 - faulted_reach / base_reach
+
+    evidence = {
+        "fault_mode": h.fault_mode,
+        "baseline_reach": base_reach,
+        "faulted_reach": faulted_reach,
+        "shrinkage": shrinkage,
+        "min_shrinkage": s.min_shrinkage,
+    }
+    if shrinkage >= s.min_shrinkage:
+        return DiagnoseReport(
+            verdict=Verdict.CONFIRMED, tier=1,
+            suspect_joint=h.suspect_joint, fault_mode=h.fault_mode, confidence=1.0,
+            evidence=evidence,
+            summary=(f"{phrase} shrinks {s.target_link}'s reachable workspace by "
+                     f"{shrinkage:.0%} (reach {base_reach:.3g} → {faulted_reach:.3g} m). "
+                     f"Reproduces the reported reduction."),
+        )
+    return DiagnoseReport(
+        verdict=Verdict.REFUTED, tier=1,
+        suspect_joint=h.suspect_joint, fault_mode=h.fault_mode, confidence=0.0,
+        evidence=evidence,
+        summary=(f"{phrase} barely changes {s.target_link}'s workspace "
+                 f"({shrinkage:.0%} < {s.min_shrinkage:.0%} threshold); does not "
+                 f"explain the reported reduction."),
+    )
+
+
+# limit_misconfig is registered for cant_reach + reduced_workspace, NOT
+# self_collision: it changes a joint's travel range, which a fixed commanded pose
+# never exercises, so it can't explain a collision there. An unregistered
+# (mode, symptom) pair is simply skipped in the loop below.
 _SIMULATORS = {
     ("motor_dead", "cant_reach"): _simulate_cant_reach,
     ("joint_stuck", "cant_reach"): _simulate_cant_reach,
     ("limit_misconfig", "cant_reach"): _simulate_cant_reach,
     ("motor_dead", "self_collision"): _simulate_locked_self_collision,
     ("joint_stuck", "self_collision"): _simulate_locked_self_collision,
+    ("motor_dead", "reduced_workspace"): _simulate_reduced_workspace,
+    ("joint_stuck", "reduced_workspace"): _simulate_reduced_workspace,
+    ("limit_misconfig", "reduced_workspace"): _simulate_reduced_workspace,
 }
 
 
@@ -282,7 +360,7 @@ def diagnose(robot: Robot, symptom: Symptom, hypotheses: list[Hypothesis]) -> Di
     """Run the two-tier loop. Hypotheses are caller-supplied."""
     link_names = {l.name for l in robot.links}
     joint_names = {j.name for j in robot.joints}
-    if symptom.kind == "cant_reach":
+    if symptom.kind in ("cant_reach", "reduced_workspace"):
         if symptom.target_link not in link_names:
             raise KeyError(f"unknown target_link: {symptom.target_link!r}")
     elif symptom.kind == "self_collision":

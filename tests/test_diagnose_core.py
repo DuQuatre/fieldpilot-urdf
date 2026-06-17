@@ -331,3 +331,51 @@ def test_misconfigure_limit_primitive(clean):
     assert r.joint("shoulder_joint").limit.lower == -3.14   # untouched
     with pytest.raises(KeyError):
         misconfigure_limit(clean, "wrist_fixed", upper=0.2)  # no <limit>
+
+
+# --- reduced_workspace symptom ----------------------------------------------
+# The reachable envelope of "tool" shrinks under any fault that removes a DOF
+# (motor_dead / joint_stuck freeze the shoulder) or clips one (limit_misconfig).
+
+@pytest.mark.parametrize("hyp", [
+    Hypothesis(suspect_joint="shoulder_joint", fault_mode="motor_dead"),
+    Hypothesis(suspect_joint="shoulder_joint", fault_mode="joint_stuck", stuck_at=0.5),
+    Hypothesis(suspect_joint="shoulder_joint", fault_mode="limit_misconfig",
+               bad_lower=-0.2, bad_upper=0.2),
+])
+def test_reduced_workspace_confirmed_for_each_fault_mode(hyp):
+    sym = Symptom(kind="reduced_workspace", target_link="tool")
+    rep = diagnose(from_xml(SAMPLE), sym, [hyp])
+    assert rep.verdict is Verdict.CONFIRMED
+    assert rep.tier == 1
+    assert rep.evidence["shrinkage"] >= sym.min_shrinkage
+    assert rep.evidence["faulted_reach"] < rep.evidence["baseline_reach"]
+
+
+def test_reduced_workspace_refuted_below_threshold():
+    """A barely-changed limit doesn't clear a strict shrinkage threshold."""
+    sym = Symptom(kind="reduced_workspace", target_link="tool", min_shrinkage=0.5)
+    hyp = [Hypothesis(suspect_joint="shoulder_joint", fault_mode="limit_misconfig",
+                      bad_lower=-3.0, bad_upper=3.0)]   # ~ the existing [-3.14, 3.14]
+    rep = diagnose(from_xml(SAMPLE), sym, hyp)
+    assert rep.verdict is Verdict.REFUTED
+
+
+def test_reduced_workspace_inapplicable_fault_is_inconclusive():
+    sym = Symptom(kind="reduced_workspace", target_link="tool")
+    hyp = [Hypothesis(suspect_joint="wrist_fixed", fault_mode="limit_misconfig", bad_upper=0.1)]
+    rep = diagnose(from_xml(SAMPLE), sym, hyp)
+    assert rep.verdict is Verdict.INCONCLUSIVE
+    assert "inapplicable" in rep.evidence
+
+
+def test_reduced_workspace_requires_target_link():
+    with pytest.raises(ValidationError):
+        Symptom(kind="reduced_workspace")
+
+
+def test_reduced_workspace_unknown_target_raises():
+    sym = Symptom(kind="reduced_workspace", target_link="nope")
+    with pytest.raises(KeyError):
+        diagnose(from_xml(SAMPLE), sym,
+                 [Hypothesis(suspect_joint="shoulder_joint", fault_mode="motor_dead")])

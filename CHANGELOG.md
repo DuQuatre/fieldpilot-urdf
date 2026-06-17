@@ -6,7 +6,16 @@ to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
-_Nothing yet._
+### Added
+- **Third symptom in `diagnose` — `reduced_workspace`.** Diagnose a shrunken
+  reachable envelope: the simulator samples the end-effector's workspace
+  (`sample_workspace`) on the healthy robot vs the faulted one and compares the
+  bounding-box reach. CONFIRMED when a fault shrinks it by at least the symptom's
+  `min_shrinkage` (default 0.1); REFUTED below that. All three fault modes apply —
+  freezing a DOF (`motor_dead`/`joint_stuck`) or clipping a limit
+  (`limit_misconfig`) all reduce the envelope — bringing the registry to seven
+  live `(fault_mode, symptom)` combinations. An inapplicable fault (e.g. a
+  limitless joint) is INCONCLUSIVE, not an abort.
 
 ## [1.2.0] — 2026-06-17
 
