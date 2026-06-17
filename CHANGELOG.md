@@ -6,7 +6,17 @@ to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
-_Nothing yet — `0.8.0.dev0` development cycle._
+### Added
+- **Numerical simulation (`[sim]` extra)** — `sim.PyBulletSim` drives a URDF
+  `Robot` in PyBullet: load (DIRECT/GUI), step, position/velocity control, and
+  joint/link state readout. Fed by the import pipeline — `sim.rewrite_mesh_paths`
+  rewrites `package://` mesh URIs to the absolute paths `fetch_meshes` wrote, so
+  a robot imported from a URL drops straight into the simulator. Loads with
+  `URDF_USE_INERTIA_FROM_FILE` so its free-fall dynamics match the symbolic
+  `SymbolicDynamics` to ~1e-5 (cross-validated in the tests). PyBullet is a
+  compiled engine behind the optional extra, imported lazily so the core stays
+  pure-Python. Deliberately thin — for richer simulation use PyBullet/MuJoCo/Drake
+  directly on the imported URDF.
 
 ## [0.7.0] — 2026-06-17
 
