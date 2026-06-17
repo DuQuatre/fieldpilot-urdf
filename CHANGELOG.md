@@ -6,6 +6,16 @@ to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+_Nothing yet._
+
+## [1.1.0] — 2026-06-17
+
+Deepens the **diagnostics** layer (Layer 4). 1.0 shipped a single vertical slice
+— `motor_dead` → `cant_reach`; 1.1 fills out the grid to **two symptoms × two
+fault modes**, all four combinations dispatched through one `(fault_mode,
+symptom)` registry that is now the sole extension point. No breaking changes; the
+1.0 public API is unchanged and additive only. 212 tests.
+
 ### Added
 - **Second symptom in `diagnose` — `self_collision`.** Beyond `cant_reach`, the
   loop now diagnoses a robot that self-collides at a commanded pose: a `Symptom`
@@ -244,5 +254,6 @@ standalone, pure-Python, pip-installable package (AGPL-3.0).
   spare-parts BOM, and multi-tenant hosting are **not** part of this package —
   they live in FieldPilot SaaS.
 
+[1.1.0]: https://github.com/DuQuatre/fieldpilot-urdf/releases/tag/v1.1.0
 [1.0.0]: https://github.com/DuQuatre/fieldpilot-urdf/releases/tag/v1.0.0
 [0.1.0]: https://github.com/DuQuatre/fieldpilot-urdf/releases/tag/v0.1.0
