@@ -76,6 +76,12 @@ this and falls back to `trimesh` only for other formats like `.dae`)
 (RRT-Connect: collision-free joint-space path between two configs; a returned
 `path` feeds straight into `check_trajectory` / `forward_kinematics`)
 
+**Cartesian planning** — `plan_cartesian_path`, `CartesianPlanResult`,
+`interpolate_pose`, `pose_error` (task-space complement to `plan_path`: a
+joint-space path whose link follows a straight line in SE(3), via a resolved-rate
+servo over the geometric Jacobian with singular-direction-only damping; `path`
+feeds straight into `check_trajectory` / `forward_kinematics`)
+
 ### Layer 4 — Diagnostics
 
 **Localise** — `rank_root_causes`, `RootCauseCandidate`, `affected_links`,
