@@ -6,6 +6,15 @@ to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [1.10.0] — 2026-06-17
+
+Adds the **velocity-kinematics** layer. The package had FK (*where* a link is)
+and IK (*how to get there*) but not the derivative that connects them; the new
+`fieldpilot_urdf.kinematics` module supplies the geometric Jacobian and what it
+unlocks — forward velocity, the Yoshikawa manipulability measure, and a
+singular-value singularity report. Pure NumPy (no scipy). No breaking changes;
+additive over the 1.9 public API. 313 tests.
+
 ### Added
 - **Velocity kinematics — `fieldpilot_urdf.kinematics`.** The derivative bridge
   between FK (*where* a link is) and IK (*how to get there*): the geometric
@@ -456,6 +465,7 @@ standalone, pure-Python, pip-installable package (AGPL-3.0).
   spare-parts BOM, and multi-tenant hosting are **not** part of this package —
   they live in FieldPilot SaaS.
 
+[1.10.0]: https://github.com/DuQuatre/fieldpilot-urdf/releases/tag/v1.10.0
 [1.9.0]: https://github.com/DuQuatre/fieldpilot-urdf/releases/tag/v1.9.0
 [1.8.0]: https://github.com/DuQuatre/fieldpilot-urdf/releases/tag/v1.8.0
 [1.7.0]: https://github.com/DuQuatre/fieldpilot-urdf/releases/tag/v1.7.0
