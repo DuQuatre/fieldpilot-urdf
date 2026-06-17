@@ -36,8 +36,9 @@ from .storage import (
 )
 from .ik import IKResult, solve_ik, solve_ik_multi
 from .importer import (
-    expand_xacro, fetch_meshes, fetch_urdf, import_urdf,
-    infer_package_root, package_uri_parts, resolve_includes, substitute_find,
+    expand_xacro, expand_xacro_local, fetch_meshes, fetch_urdf, import_urdf,
+    import_urdf_file, infer_package_root, package_uri_parts, resolve_includes,
+    resolve_includes_local, substitute_find,
 )
 from .trajectory import (
     StepFinding, WorkspaceResult, check_trajectory, sample_workspace,
@@ -69,7 +70,8 @@ __all__ = [
     "StepFinding", "WorkspaceResult", "check_trajectory", "sample_workspace", "trajectory_summary",
     "PlanResult", "plan_path", "shorten_path", "path_length",
     "IKResult", "solve_ik", "solve_ik_multi",
-    "expand_xacro", "fetch_meshes", "fetch_urdf", "import_urdf",
-    "infer_package_root", "package_uri_parts", "resolve_includes", "substitute_find",
+    "expand_xacro", "expand_xacro_local", "fetch_meshes", "fetch_urdf", "import_urdf",
+    "import_urdf_file", "infer_package_root", "package_uri_parts", "resolve_includes",
+    "resolve_includes_local", "substitute_find",
     "RootCauseCandidate", "affected_links", "criticality", "rank_root_causes",
 ]

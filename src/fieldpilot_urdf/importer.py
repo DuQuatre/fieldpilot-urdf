@@ -355,6 +355,160 @@ def import_urdf(
     return robot, final_url
 
 
+# --- local-filesystem import -----------------------------------------------
+# The network importer above is HTTPS-only by design (SSRF defence). Robots
+# also commonly live on disk — a checked-out ROS package, an exported xacro.
+# These mirror the fetch pipeline ($(find) → includes → xacro → parse) against
+# the local filesystem, with NO network access: a remote <xacro:include> is a
+# hard error here (use import_urdf for that). package:// references resolve via
+# a caller-supplied `package_roots` map {package_name: local_directory}.
+
+def _resolve_include_path_local(
+    filename: str, base_dir: Path, package_roots: dict[str, Path],
+) -> Path:
+    """Map an include/yaml `filename` to a local path. `package://pkg/sub`
+    resolves via `package_roots[pkg]`; absolute paths are used as-is; everything
+    else is joined against `base_dir`. Remote URIs raise (no network locally)."""
+    if filename.startswith(("http://", "https://", "file://")):
+        raise ImportError_(
+            f"remote include {filename!r} not allowed in local import — "
+            "use import_urdf() for network sources"
+        )
+    if filename.startswith("package://"):
+        pkg, sub = package_uri_parts(filename)  # type: ignore[misc]
+        root = package_roots.get(pkg)
+        if root is None:
+            raise ImportError_(
+                f"no local package root for {pkg!r}; pass "
+                f"package_roots={{{pkg!r}: '/path/to/{pkg}'}}"
+            )
+        return root / sub
+    p = Path(filename)
+    return p if p.is_absolute() else base_dir / filename
+
+
+def _splice_includes_local(elem, base_dir, *, package_roots, depth, max_depth, visited):
+    if depth > max_depth:
+        raise ImportError_(
+            f"xacro include depth exceeded {max_depth} (cycle? {sorted(visited)})"
+        )
+    for child in list(elem.childNodes):
+        if _is_xacro_include(child):
+            filename = child.getAttribute("filename")
+            path = _resolve_include_path_local(filename, base_dir, package_roots)
+            key = str(path.resolve())
+            if key in visited:
+                elem.removeChild(child)  # include-guard semantics: drop dupes
+                continue
+            visited.add(key)
+            try:
+                sub_text = substitute_find(path.read_text())
+            except OSError as e:
+                raise ImportError_(f"cannot read include {path}: {e}") from e
+            sub_doc = xml.dom.minidom.parseString(sub_text)
+            _splice_includes_local(
+                sub_doc.documentElement, path.parent, package_roots=package_roots,
+                depth=depth + 1, max_depth=max_depth, visited=visited)
+            for sub_child in list(sub_doc.documentElement.childNodes):
+                imported = elem.ownerDocument.importNode(sub_child, deep=True)
+                elem.insertBefore(imported, child)
+            elem.removeChild(child)
+        elif child.nodeType == child.ELEMENT_NODE:
+            _splice_includes_local(
+                child, base_dir, package_roots=package_roots,
+                depth=depth, max_depth=max_depth, visited=visited)
+
+
+def _norm_package_roots(package_roots: Optional[dict[str, str]]) -> dict[str, Path]:
+    return {k: Path(v) for k, v in (package_roots or {}).items()}
+
+
+def resolve_includes_local(
+    text: str,
+    base_dir: str | Path,
+    *,
+    package_roots: Optional[dict[str, str]] = None,
+    max_depth: int = MAX_INCLUDE_DEPTH,
+) -> str:
+    """Recursively inline every `<xacro:include>` from the local filesystem.
+
+    The local twin of :func:`resolve_includes`: `filename` resolves against
+    `base_dir` (relative) or `package_roots` (`package://pkg/...`); content is
+    read from disk, `$(find)`-substituted, recursively resolved, and spliced in
+    place. Duplicate includes are dropped (include-guard), cycles/over-deep nests
+    raise :class:`ImportError_`, and remote URIs are refused.
+    """
+    doc = xml.dom.minidom.parseString(substitute_find(text))
+    _splice_includes_local(
+        doc.documentElement, Path(base_dir),
+        package_roots=_norm_package_roots(package_roots),
+        depth=0, max_depth=max_depth, visited=set())
+    return doc.toxml()
+
+
+def _make_yaml_resolver_local(base_dir: Path, package_roots: dict[str, Path]):
+    """`xacro.load_yaml` drop-in that reads YAML configs from disk, resolving
+    `package://` via `package_roots` and relative paths against `base_dir`."""
+    import yaml
+    from xacro import YamlListWrapper, ConstructUnits
+
+    original = xacro.load_yaml
+
+    def patched(filename):
+        if not isinstance(filename, str):
+            return original(filename)
+        path = _resolve_include_path_local(filename, base_dir, package_roots)
+        for unit in ConstructUnits:
+            yaml.SafeLoader.add_constructor(unit.value.tag, unit.constructor)
+        return YamlListWrapper.wrap(yaml.safe_load(path.read_text()))
+
+    return patched
+
+
+def expand_xacro_local(
+    text: str,
+    *,
+    base_dir: str | Path,
+    package_roots: Optional[dict[str, str]] = None,
+    mappings: Optional[dict[str, str]] = None,
+) -> str:
+    """Run xacro property/macro expansion on local source, resolving any
+    `${load_yaml(...)}` against the filesystem (the local twin of
+    :func:`expand_xacro` with a `base_url`)."""
+    doc = xml.dom.minidom.parseString(text)
+    patched = _make_yaml_resolver_local(Path(base_dir), _norm_package_roots(package_roots))
+    saved = _swap_xacro_load_yaml(patched)
+    try:
+        xacro.process_doc(doc, mappings=mappings or {})
+    finally:
+        _restore_xacro_load_yaml(saved)
+    return doc.toxml()
+
+
+def import_urdf_file(
+    path: str | Path,
+    *,
+    expand_macros: bool = True,
+    package_roots: Optional[dict[str, str]] = None,
+    mappings: Optional[dict[str, str]] = None,
+) -> Robot:
+    """One-shot local import: read → resolve includes → `$(find)` → xacro → parse.
+
+    The filesystem counterpart of :func:`import_urdf` — no network. `path` points
+    at a `.urdf` or `.xacro` on disk; `package://` references in includes / meshes
+    / `load_yaml` resolve via `package_roots` ({package_name: local_directory}).
+    `expand_macros=False` skips include resolution AND xacro expansion (use it
+    when `path` is already a plain URDF). Returns the parsed :class:`Robot`.
+    """
+    path = Path(path)
+    text = path.read_text()
+    if expand_macros:
+        text = resolve_includes_local(text, path.parent, package_roots=package_roots)
+        text = expand_xacro_local(text, base_dir=path.parent,
+                                  package_roots=package_roots, mappings=mappings)
+    return from_xml(text)
+
+
 # --- mesh download ---------------------------------------------------------
 
 # Reasonable per-file ceiling for binary meshes — STL/OBJ/DAE for a single
