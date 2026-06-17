@@ -6,6 +6,14 @@ to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [1.5.0] — 2026-06-17
+
+Adds a **motion-planning** layer. Where the 1.x line could *validate* a path
+(`check_trajectory`), `plan_path` now *generates* a collision-free one between
+two configurations via RRT-Connect — and the result feeds straight back into the
+existing kinematics/validation calls. Pure-Python, no new dependencies. No
+breaking changes; additive over the 1.4 public API. 247 tests.
+
 ### Added
 - **Motion planning — `plan_path`.** New `fieldpilot_urdf.planning` module: an
   RRT-Connect planner that *generates* a collision-free joint-space path between
@@ -329,6 +337,7 @@ standalone, pure-Python, pip-installable package (AGPL-3.0).
   spare-parts BOM, and multi-tenant hosting are **not** part of this package —
   they live in FieldPilot SaaS.
 
+[1.5.0]: https://github.com/DuQuatre/fieldpilot-urdf/releases/tag/v1.5.0
 [1.4.0]: https://github.com/DuQuatre/fieldpilot-urdf/releases/tag/v1.4.0
 [1.3.0]: https://github.com/DuQuatre/fieldpilot-urdf/releases/tag/v1.3.0
 [1.2.0]: https://github.com/DuQuatre/fieldpilot-urdf/releases/tag/v1.2.0
