@@ -43,7 +43,10 @@ Installed by `pip install fieldpilot-urdf`. No optional extra required.
 **Forward kinematics** — `forward_kinematics`, and the transform helpers
 `joint_motion`, `origin_to_T`, `rotation_around_axis`, `rpy_to_R`, `R_to_rpy`
 
-**Inverse kinematics** — `solve_ik`, `IKResult`
+**Inverse kinematics** — `solve_ik`, `solve_ik_multi`, `IKResult`
+(`solve_ik` takes `n_restarts`/`seed` for random-restart robustness on hard
+targets; `solve_ik_multi` returns multiple *distinct* solutions, e.g. elbow-up /
+elbow-down)
 
 **Self-collision** — `detect_self_collisions`, `aabb_overlap`,
 `link_collision_aabbs`, `transform_aabb`, `MeshResolver`, `clear_mesh_cache`,

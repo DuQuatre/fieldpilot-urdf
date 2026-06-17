@@ -34,7 +34,7 @@ from .repair import Patch, REPAIRS, UNFIXABLE_CODES, repair
 from .storage import (
     delete_robot, list_robots, load_meta, load_resolver, load_robot, save_robot,
 )
-from .ik import IKResult, solve_ik
+from .ik import IKResult, solve_ik, solve_ik_multi
 from .importer import (
     expand_xacro, fetch_meshes, fetch_urdf, import_urdf,
     infer_package_root, package_uri_parts, resolve_includes, substitute_find,
@@ -68,7 +68,7 @@ __all__ = [
     "Patch", "REPAIRS", "UNFIXABLE_CODES", "repair",
     "StepFinding", "WorkspaceResult", "check_trajectory", "sample_workspace", "trajectory_summary",
     "PlanResult", "plan_path", "shorten_path", "path_length",
-    "IKResult", "solve_ik",
+    "IKResult", "solve_ik", "solve_ik_multi",
     "expand_xacro", "fetch_meshes", "fetch_urdf", "import_urdf",
     "infer_package_root", "package_uri_parts", "resolve_includes", "substitute_find",
     "RootCauseCandidate", "affected_links", "criticality", "rank_root_causes",
