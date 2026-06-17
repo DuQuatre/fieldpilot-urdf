@@ -6,6 +6,22 @@ to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Added
+- **Pure-Python mesh bounds reader — `read_mesh_bounds`.** New
+  `fieldpilot_urdf.mesh` module reads a mesh file's vertex bounding box in pure
+  Python (NumPy only) for the formats that dominate URDFs: **STL** (binary *and*
+  ASCII, auto-detected), **OBJ**, and **PLY** (ASCII + binary little/big endian).
+  Returns `((minx, miny, minz), (maxx, maxy, maxz))` or `None` for an
+  unsupported/corrupt file; `SUPPORTED_FORMATS` lists the handled extensions.
+
+### Changed
+- **Mesh self-collision no longer requires the `[mesh]` extra for STL/OBJ/PLY.**
+  `collisions._load_mesh_aabb` now resolves AABBs via `read_mesh_bounds` first
+  and only falls back to `trimesh` for other formats (COLLADA `.dae`, glTF). So
+  `detect_self_collisions` with mesh geometry works on a plain
+  `pip install fieldpilot-urdf` for the common formats. No API change; results
+  are identical (the native STL reader matches trimesh's bounds).
+
 ## [1.8.0] — 2026-06-17
 
 Broadens the **importer**. `import_urdf` could already pull a robot (with full

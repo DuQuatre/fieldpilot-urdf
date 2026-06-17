@@ -32,7 +32,7 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
-mesh = ["trimesh>=4.0"]                          # collisions.py mesh AABB (lazy import)
+mesh = ["trimesh>=4.0"]                          # collisions.py AABB fallback for non-STL/OBJ/PLY (e.g. .dae); lazy import
 viz = ["graphviz>=0.20", "matplotlib>=3.8"]      # tree + mesh-free pose renderers
 # Industrial mesh-accurate render_pose_mesh(): heavy GL stack, kept out of [viz]
 # so the light pose/tree renderers don't drag in pyrender. Needs a headless GL
