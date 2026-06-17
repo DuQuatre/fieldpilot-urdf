@@ -6,6 +6,15 @@ to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [1.7.0] — 2026-06-17
+
+Deepens the **dynamics** layer. `SymbolicDynamics` produced the instantaneous
+equations of motion; the new `fieldpilot_urdf.simulate` module rolls them forward
+in time (`integrate_dynamics`) and inverts them (`inverse_dynamics`,
+`gravity_torques`) — closing the loop from model to motion to control. Pure
+NumPy, no SciPy required, under the existing `[dynamics]` extra. No breaking
+changes; additive over the 1.6 public API. 270 tests.
+
 ### Added
 - **Dynamics simulation — `fieldpilot_urdf.simulate`.** A numerical layer over
   `SymbolicDynamics` (the `[dynamics]` extra) that turns the instantaneous
@@ -379,6 +388,7 @@ standalone, pure-Python, pip-installable package (AGPL-3.0).
   spare-parts BOM, and multi-tenant hosting are **not** part of this package —
   they live in FieldPilot SaaS.
 
+[1.7.0]: https://github.com/DuQuatre/fieldpilot-urdf/releases/tag/v1.7.0
 [1.6.0]: https://github.com/DuQuatre/fieldpilot-urdf/releases/tag/v1.6.0
 [1.5.0]: https://github.com/DuQuatre/fieldpilot-urdf/releases/tag/v1.5.0
 [1.4.0]: https://github.com/DuQuatre/fieldpilot-urdf/releases/tag/v1.4.0
