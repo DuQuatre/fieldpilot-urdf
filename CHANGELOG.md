@@ -6,7 +6,12 @@ to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
-_Nothing yet — `0.7.0.dev0` development cycle._
+### Added
+- **Example: `examples/closed_loop_sim.py`** — end-to-end closed-loop dynamics
+  simulation over time. Builds a mobility-1 4R spatial mechanism (tip pinned to
+  a point), integrates it under gravity, and shows the constraint residual
+  staying at ~1e-13 with Baumgarte + projection vs ~2e-2 unstabilized — while
+  the mechanism swings 1.4 rad and the loop stays closed to machine precision.
 
 ## [0.6.0] — 2026-06-16
 
