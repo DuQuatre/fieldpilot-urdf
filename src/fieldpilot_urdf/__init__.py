@@ -43,6 +43,9 @@ from .trajectory import (
     StepFinding, WorkspaceResult, check_trajectory, sample_workspace,
     trajectory_summary,
 )
+from .planning import (
+    PlanResult, path_length, plan_path, shorten_path,
+)
 from .fault_propagation import (
     RootCauseCandidate, affected_links, criticality, rank_root_causes,
 )
@@ -64,6 +67,7 @@ __all__ = [
     "save_robot", "load_robot", "load_meta", "load_resolver", "list_robots", "delete_robot",
     "Patch", "REPAIRS", "UNFIXABLE_CODES", "repair",
     "StepFinding", "WorkspaceResult", "check_trajectory", "sample_workspace", "trajectory_summary",
+    "PlanResult", "plan_path", "shorten_path", "path_length",
     "IKResult", "solve_ik",
     "expand_xacro", "fetch_meshes", "fetch_urdf", "import_urdf",
     "infer_package_root", "package_uri_parts", "resolve_includes", "substitute_find",

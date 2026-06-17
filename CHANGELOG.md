@@ -6,6 +6,21 @@ to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Added
+- **Motion planning — `plan_path`.** New `fieldpilot_urdf.planning` module: an
+  RRT-Connect planner that *generates* a collision-free joint-space path between
+  a start and goal configuration, complementing `check_trajectory` (which only
+  *validates* a path you already have). Bidirectional trees grow toward random
+  samples within joint limits and link up; edges are collision-checked at
+  `step_size` resolution against `detect_self_collisions`. Endpoints are
+  validated up front (out-of-limits or self-colliding start/goal fail with an
+  explanatory message). Continuous joints are handled on the shortest wrapped
+  arc. The result is post-processed by greedy short-cutting (`smooth=True`).
+  Returns a `PlanResult` whose `path` is a list of waypoint dicts that feeds
+  straight into `check_trajectory` / `forward_kinematics`. Also exported:
+  `shorten_path` (short-cut any waypoint path) and `path_length` (joint-space
+  length, continuous-aware). `seed` makes runs reproducible.
+
 ## [1.4.0] — 2026-06-17
 
 Closes the **diagnostics** loop into a self-bootstrapping engine. `diagnose` now
