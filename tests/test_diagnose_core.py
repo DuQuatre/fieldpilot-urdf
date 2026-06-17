@@ -271,3 +271,63 @@ def test_cant_reach_requires_target():
 def test_self_collision_requires_at_config():
     with pytest.raises(ValidationError):
         Symptom(kind="self_collision")
+
+
+# --- limit_misconfig fault mode (mis-set travel <limit>, non-lock) ----------
+
+def test_limit_misconfig_confirmed_when_range_clips_target(clean):
+    """A target needing the shoulder at 0.9 is unreachable once its limit is
+    narrowed to [-0.1, 0.1] — the joint still moves, just not far enough."""
+    target = _tool_xyz(clean, {"shoulder_joint": 0.9, "elbow_joint": 0.5})
+    sym = Symptom(kind="cant_reach", target_link="tool", target_xyz=target)
+    hyp = [Hypothesis(suspect_joint="shoulder_joint", fault_mode="limit_misconfig",
+                      bad_lower=-0.1, bad_upper=0.1)]
+    rep = diagnose(from_xml(SAMPLE), sym, hyp)
+    assert rep.verdict is Verdict.CONFIRMED
+    assert rep.tier == 1
+    assert rep.evidence["bad_upper"] == 0.1
+    assert rep.evidence["faulted_reachable"] is False
+
+
+def test_limit_misconfig_refuted_when_range_still_admits_target(clean):
+    """A bad limit that's still wide enough to admit the needed angle doesn't
+    explain the symptom."""
+    target = _tool_xyz(clean, {"shoulder_joint": 0.9, "elbow_joint": 0.5})
+    sym = Symptom(kind="cant_reach", target_link="tool", target_xyz=target)
+    hyp = [Hypothesis(suspect_joint="shoulder_joint", fault_mode="limit_misconfig",
+                      bad_lower=-2.0, bad_upper=2.0)]
+    rep = diagnose(from_xml(SAMPLE), sym, hyp)
+    assert rep.verdict is Verdict.REFUTED
+
+
+def test_limit_misconfig_on_limitless_joint_is_inconclusive(clean):
+    """The fixed wrist joint has no <limit> to misconfigure → INCONCLUSIVE, and
+    the loop is not aborted."""
+    target = _tool_xyz(clean, {"shoulder_joint": 0.9, "elbow_joint": 0.5})
+    sym = Symptom(kind="cant_reach", target_link="tool", target_xyz=target)
+    hyp = [Hypothesis(suspect_joint="wrist_fixed", fault_mode="limit_misconfig", bad_upper=0.1)]
+    rep = diagnose(from_xml(SAMPLE), sym, hyp)
+    assert rep.verdict is Verdict.INCONCLUSIVE
+    assert "inapplicable" in rep.evidence
+
+
+def test_limit_misconfig_not_applicable_to_self_collision(fold):
+    """limit_misconfig is unregistered for self_collision (a static range change
+    can't alter a fixed commanded pose) → no simulator → INCONCLUSIVE."""
+    sym = Symptom(kind="self_collision", at_config=CMD)
+    rep = diagnose(fold, sym, [Hypothesis(suspect_joint="j2", fault_mode="limit_misconfig", bad_upper=0.1)])
+    assert rep.verdict is Verdict.INCONCLUSIVE
+
+
+def test_limit_misconfig_requires_a_bad_bound():
+    with pytest.raises(ValidationError):
+        Hypothesis(suspect_joint="shoulder_joint", fault_mode="limit_misconfig")
+
+
+def test_misconfigure_limit_primitive(clean):
+    from fieldpilot_urdf import misconfigure_limit
+    r = misconfigure_limit(clean, "shoulder_joint", upper=0.2)
+    assert r.joint("shoulder_joint").limit.upper == 0.2
+    assert r.joint("shoulder_joint").limit.lower == -3.14   # untouched
+    with pytest.raises(KeyError):
+        misconfigure_limit(clean, "wrist_fixed", upper=0.2)  # no <limit>

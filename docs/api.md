@@ -61,7 +61,8 @@ Installed by `pip install fieldpilot-urdf`. No optional extra required.
 `DiagnoseReport`
 
 **Fault injection** (used by `diagnose`, also callable directly) —
-`inject_motor_fault`, `freeze_joint`, `freeze_joint_at`, `fault_source_tag`
+`inject_motor_fault`, `freeze_joint`, `freeze_joint_at`, `misconfigure_limit`,
+`fault_source_tag`
 
 ### Misc
 

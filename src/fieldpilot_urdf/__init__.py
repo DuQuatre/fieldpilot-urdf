@@ -17,7 +17,9 @@ from .collisions import (
     link_collision_aabbs, transform_aabb, unresolved_meshes,
 )
 from .diagnostics import Finding, RULES, run_all, summary
-from .faults import fault_source_tag, freeze_joint, freeze_joint_at, inject_motor_fault
+from .faults import (
+    fault_source_tag, freeze_joint, freeze_joint_at, inject_motor_fault, misconfigure_limit,
+)
 from .diagnose_core import (
     DiagnoseReport, Hypothesis, Symptom, Verdict, diagnose,
 )
@@ -54,7 +56,7 @@ __all__ = [
     "build_graph", "chain", "is_tree", "joints_on_path", "leaf_links",
     "root_links", "subtree",
     "Finding", "RULES", "run_all", "summary",
-    "inject_motor_fault", "freeze_joint", "freeze_joint_at", "fault_source_tag",
+    "inject_motor_fault", "freeze_joint", "freeze_joint_at", "misconfigure_limit", "fault_source_tag",
     "diagnose", "Symptom", "Hypothesis", "Verdict", "DiagnoseReport",
     "forward_kinematics", "joint_motion", "origin_to_T", "R_to_rpy", "rotation_around_axis", "rpy_to_R",
     "aabb_overlap", "detect_self_collisions", "link_collision_aabbs", "transform_aabb",
