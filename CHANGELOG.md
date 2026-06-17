@@ -6,7 +6,20 @@ to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
-_Nothing yet._
+### Added
+- **Second fault mode in `diagnose` — `joint_stuck`.** The diagnosis loop now
+  handles a joint *jammed at a reported angle* alongside the existing
+  `motor_dead` (dead actuator at the zero pose). `Hypothesis` gains a `stuck_at`
+  field (rad / m; defaults to 0, where `joint_stuck` reduces to `motor_dead`),
+  and the verdict records it in `evidence`. Both modes share one symbolic
+  "locked axis → can't reach" simulator, so the `(fault_mode, symptom)` registry
+  stays the single extension point.
+- **`freeze_joint_at(robot, joint, angle)`** (in `faults`) — lock a joint at a
+  non-zero pose by baking its motion into a fixed-joint origin (vs `freeze_joint`,
+  which locks at zero). Underpins `joint_stuck`.
+- **`R_to_rpy`** (in `fk`) — inverse of `rpy_to_R`, recovering URDF fixed-axis
+  `(roll, pitch, yaw)` from a rotation matrix (round-trips to ~1e-13, with
+  gimbal-lock handling).
 
 ## [1.0.0] — 2026-06-17
 

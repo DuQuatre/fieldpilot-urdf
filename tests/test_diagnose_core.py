@@ -122,3 +122,61 @@ def test_unknown_target_link_raises(clean):
     sym = Symptom(kind="cant_reach", target_link="nope", target_xyz=(0.1, 0.0, 0.3))
     with pytest.raises(KeyError):
         diagnose(clean, sym, HYP)
+
+
+# --- joint_stuck fault mode (jammed at a reported angle) -------------------
+
+def test_joint_stuck_confirmed_at_wrong_angle(clean):
+    """A target the healthy arm reaches (shoulder rotated to 0.9) becomes
+    unreachable if the shoulder is jammed at a *different* angle → CONFIRMED,
+    and the evidence records the stuck angle."""
+    target = _tool_xyz(clean, {"shoulder_joint": 0.9, "elbow_joint": 0.5})
+    sym = Symptom(kind="cant_reach", target_link="tool", target_xyz=target)
+    hyp = [Hypothesis(suspect_joint="shoulder_joint", fault_mode="joint_stuck", stuck_at=-1.2)]
+    rep = diagnose(from_xml(SAMPLE), sym, hyp)
+    assert rep.verdict is Verdict.CONFIRMED
+    assert rep.tier == 1
+    assert rep.fault_mode == "joint_stuck"
+    assert rep.evidence["stuck_at"] == -1.2
+    assert rep.evidence["faulted_reachable"] is False
+
+
+def test_joint_stuck_refuted_when_jammed_at_solution(clean):
+    """If the joint is jammed at the very angle the target needs, the arm can
+    still reach it (the other joint takes up the slack) → REFUTED."""
+    target = _tool_xyz(clean, {"shoulder_joint": 0.9, "elbow_joint": 0.5})
+    sym = Symptom(kind="cant_reach", target_link="tool", target_xyz=target)
+    hyp = [Hypothesis(suspect_joint="shoulder_joint", fault_mode="joint_stuck", stuck_at=0.9)]
+    rep = diagnose(from_xml(SAMPLE), sym, hyp)
+    assert rep.verdict is Verdict.REFUTED
+    assert rep.evidence["faulted_reachable"] is True
+
+
+def test_joint_stuck_default_angle_matches_motor_dead(clean):
+    """stuck_at defaults to 0.0, i.e. jammed at the neutral pose — kinematically
+    identical to a dead motor. Both verdicts must agree."""
+    target = _tool_xyz(clean, {"shoulder_joint": 0.9, "elbow_joint": 0.5})
+    sym = Symptom(kind="cant_reach", target_link="tool", target_xyz=target)
+    dead = diagnose(from_xml(SAMPLE), sym,
+                    [Hypothesis(suspect_joint="shoulder_joint", fault_mode="motor_dead")])
+    stuck0 = diagnose(from_xml(SAMPLE), sym,
+                      [Hypothesis(suspect_joint="shoulder_joint", fault_mode="joint_stuck")])
+    assert dead.verdict is stuck0.verdict is Verdict.CONFIRMED
+    assert dead.evidence["faulted_pos_err"] == pytest.approx(stuck0.evidence["faulted_pos_err"])
+
+
+def test_mixed_fault_modes_picks_the_reproducing_one(clean):
+    """Both modes offered for both joints; only the one whose simulated lock
+    reproduces the symptom wins (best-first, first CONFIRMED)."""
+    target = _tool_xyz(clean, {"shoulder_joint": 0.9, "elbow_joint": 0.0})
+    sym = Symptom(kind="cant_reach", target_link="tool", target_xyz=target)
+    # Elbow jammed at 0.0 = its value in the target pose, so the arm still
+    # reaches (shoulder free) → that hypothesis is REFUTED; only the dead
+    # shoulder reproduces the symptom.
+    hyps = [
+        Hypothesis(suspect_joint="elbow_joint", fault_mode="joint_stuck", stuck_at=0.0),
+        Hypothesis(suspect_joint="shoulder_joint", fault_mode="motor_dead"),
+    ]
+    rep = diagnose(from_xml(SAMPLE), sym, hyps)
+    assert rep.verdict is Verdict.CONFIRMED
+    assert rep.suspect_joint == "shoulder_joint"

@@ -27,6 +27,27 @@ def rpy_to_R(rpy: tuple[float, float, float]) -> np.ndarray:
     return Rz @ Ry @ Rx
 
 
+def R_to_rpy(R: np.ndarray) -> tuple[float, float, float]:
+    """Inverse of :func:`rpy_to_R`: recover URDF fixed-axis ``(roll, pitch, yaw)``
+    from a rotation matrix ``R = Rz(yaw) @ Ry(pitch) @ Rx(roll)``.
+
+    Pitch is returned in ``[-pi/2, pi/2]``. At the gimbal-lock poles
+    (``|pitch| = pi/2``) roll is pinned to 0 and the residual rotation folded
+    into yaw — a valid decomposition, since roll and yaw are degenerate there.
+    """
+    R = np.asarray(R, dtype=float)
+    sp = float(np.clip(-R[2, 0], -1.0, 1.0))           # sin(pitch)
+    cp = float(np.sqrt(max(0.0, 1.0 - sp * sp)))       # cos(pitch) >= 0
+    if cp < 1e-9:                                       # gimbal lock
+        pitch = np.pi / 2 if sp > 0 else -np.pi / 2
+        return (0.0, float(pitch), float(np.arctan2(-R[0, 1], R[1, 1])))
+    return (
+        float(np.arctan2(R[2, 1], R[2, 2])),           # roll
+        float(np.arctan2(sp, cp)),                     # pitch
+        float(np.arctan2(R[1, 0], R[0, 0])),           # yaw
+    )
+
+
 def origin_to_T(o: Optional[Origin]) -> np.ndarray:
     T = np.eye(4)
     if o is None:

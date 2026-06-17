@@ -41,7 +41,7 @@ Installed by `pip install fieldpilot-urdf`. No optional extra required.
 ### Layer 2 — Kinematics
 
 **Forward kinematics** — `forward_kinematics`, and the transform helpers
-`joint_motion`, `origin_to_T`, `rotation_around_axis`, `rpy_to_R`
+`joint_motion`, `origin_to_T`, `rotation_around_axis`, `rpy_to_R`, `R_to_rpy`
 
 **Inverse kinematics** — `solve_ik`, `IKResult`
 
@@ -61,7 +61,7 @@ Installed by `pip install fieldpilot-urdf`. No optional extra required.
 `DiagnoseReport`
 
 **Fault injection** (used by `diagnose`, also callable directly) —
-`inject_motor_fault`, `freeze_joint`, `fault_source_tag`
+`inject_motor_fault`, `freeze_joint`, `freeze_joint_at`, `fault_source_tag`
 
 ### Misc
 
