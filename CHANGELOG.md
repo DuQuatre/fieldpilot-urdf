@@ -6,6 +6,21 @@ to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Added
+- **Dynamics simulation — `fieldpilot_urdf.simulate`.** A numerical layer over
+  `SymbolicDynamics` (the `[dynamics]` extra) that turns the instantaneous
+  equations of motion into motion over time and inverts them:
+  - **`integrate_dynamics`** rolls the forward dynamics from an initial state
+    under an applied-torque law (passive, a constant per-joint dict/vector, or a
+    `(t, q, u) -> torque` callable), returning a sampled `Trajectory`. Methods:
+    `"rk4"` (default) and symplectic `"euler"`. Pure NumPy — no SciPy needed.
+  - **`inverse_dynamics`** returns a callable `tau(q, u, qdd)` giving the joint
+    torques that realise a desired acceleration (`tau = M(q)·qdd − F(q, q̇, 0)`).
+  - **`gravity_torques`** gives the static holding torques at a configuration
+    (gravity compensation — inverse dynamics with `q̇ = q̈ = 0`).
+  - **`Trajectory`** carries `joint_ids`, `times`, `q`, `u` with `as_dicts()`,
+    `final_q()`, `final_u()` helpers. Degenerate (all-fixed) robots are handled.
+
 ## [1.6.0] — 2026-06-17
 
 Strengthens **inverse kinematics**. `solve_ik_multi` surfaces *all* distinct
