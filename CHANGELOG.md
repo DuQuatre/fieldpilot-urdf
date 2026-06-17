@@ -6,6 +6,15 @@ to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [1.11.0] — 2026-06-17
+
+Adds **Cartesian (task-space) path planning**. Where 1.5's `plan_path` plans in
+joint space (RRT-Connect), the new `fieldpilot_urdf.cartesian` module plans in
+task space: `plan_cartesian_path` drives a link along a straight line in SE(3)
+via a resolved-rate servo over the 1.10 geometric Jacobian — standing the new
+layer directly on the previous one. Pure NumPy (no scipy). No breaking changes;
+additive over the 1.10 public API. 323 tests.
+
 ### Added
 - **Cartesian path planning — `plan_cartesian_path`.** New
   `fieldpilot_urdf.cartesian` module: the task-space complement to
@@ -484,6 +493,7 @@ standalone, pure-Python, pip-installable package (AGPL-3.0).
   spare-parts BOM, and multi-tenant hosting are **not** part of this package —
   they live in FieldPilot SaaS.
 
+[1.11.0]: https://github.com/DuQuatre/fieldpilot-urdf/releases/tag/v1.11.0
 [1.10.0]: https://github.com/DuQuatre/fieldpilot-urdf/releases/tag/v1.10.0
 [1.9.0]: https://github.com/DuQuatre/fieldpilot-urdf/releases/tag/v1.9.0
 [1.8.0]: https://github.com/DuQuatre/fieldpilot-urdf/releases/tag/v1.8.0
