@@ -41,7 +41,10 @@ meshviz = ["urchin>=0.0.27", "pyrender>=0.1.45", "fieldpilot-urdf[viz]"]
 # Symbolic dynamics (Kane's method): mass matrix, forcing, forward dynamics.
 # Kept lazy + optional so the kinematics path doesn't pull in SymPy.
 dynamics = ["sympy>=1.12"]
-all = ["fieldpilot-urdf[mesh,viz,meshviz,dynamics]"]
+# Numerical multibody simulation via PyBullet (compiled engine). Optional + lazy
+# so the core stays pure-Python; meshes from import_urdf feed it via sim.py.
+sim = ["pybullet>=3.2.5"]
+all = ["fieldpilot-urdf[mesh,viz,meshviz,dynamics,sim]"]
 dev = ["pytest>=8.0", "fieldpilot-urdf[all]"]
 
 [project.urls]

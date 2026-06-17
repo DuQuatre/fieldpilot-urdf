@@ -22,6 +22,7 @@ pip install fieldpilot-urdf                # core (parse, FK, IK, validation)
 pip install "fieldpilot-urdf[mesh]"        # + mesh-aware self-collision (trimesh)
 pip install "fieldpilot-urdf[viz]"         # + kinematic-tree / 3D-pose renderers
 pip install "fieldpilot-urdf[dynamics]"    # + Kane's-method symbolic dynamics (sympy)
+pip install "fieldpilot-urdf[sim]"         # + PyBullet numerical simulation
 pip install "fieldpilot-urdf[all]"         # everything
 ```
 
@@ -130,6 +131,28 @@ Tree (serial) robots only in this release. Joint-origin frames follow URDF's
 `forward_kinematics` to machine precision. Closed-loop mechanisms and
 multi-DOF joints (`floating`/`planar`/`spherical`) raise `UnsupportedSystemError`.
 
+### Numerical simulation (needs the `[sim]` extra)
+
+```python
+from pathlib import Path
+from fieldpilot_urdf import import_urdf
+from fieldpilot_urdf.importer import fetch_meshes
+from fieldpilot_urdf.sim import PyBulletSim
+
+robot, url = import_urdf("https://.../ur5.urdf.xacro")      # URDF -> model
+fetch_meshes(robot, url, Path("/tmp/ur5"))                  # download package:// meshes
+with PyBulletSim(robot, mesh_dir="/tmp/ur5") as sim:        # straight into PyBullet
+    sim.set_position_targets({"shoulder_pan_joint": 0.5})
+    sim.step(240)
+    print(sim.joint_states())                               # {joint: (pos, vel)}
+```
+
+A thin PyBullet wrapper — load, step, control, read state — fed by the import
+pipeline (`package://` mesh paths are rewritten to the fetched files). It honours
+the URDF's `<inertia>` (`URDF_USE_INERTIA_FROM_FILE`), so its free-fall dynamics
+match the symbolic `SymbolicDynamics` to ~1e-5. For richer simulation, use
+PyBullet / MuJoCo / Drake directly on the URDF this package imports.
+
 ## What you can do
 
 | Capability | API |
@@ -147,6 +170,7 @@ multi-DOF joints (`floating`/`planar`/`spherical`) raise `UnsupportedSystemError
 | Symbolic dynamics (Kane's method) | `SymbolicDynamics` |
 | Closed-loop modelling & constraint deriver | `LoopClosure`, `loops.derive_loop_constraints` |
 | Closed-loop (constrained) dynamics | `constrained.constrained_dynamics` |
+| Numerical simulation (PyBullet) | `sim.PyBulletSim` |
 | Render kinematic tree / 3D pose | `render_kinematic_tree`, `render_pose_3d` |
 | Local robot registry | `save_robot`, `load_robot`, `list_robots` |
 
