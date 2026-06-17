@@ -10,7 +10,7 @@ imported here, so the core install stays light — `pip install fieldpilot-urdf[
 and `from fieldpilot_urdf.viz import render_kinematic_tree, render_pose_3d`.
 """
 
-__version__ = "1.10.0"
+__version__ = "1.11.0.dev0"
 
 from .collisions import (
     MeshResolver, aabb_overlap, clear_mesh_cache, detect_self_collisions,
