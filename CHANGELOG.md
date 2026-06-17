@@ -6,6 +6,14 @@ to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [1.9.0] — 2026-06-17
+
+Adds native **mesh format support**. A new `fieldpilot_urdf.mesh` module reads
+vertex bounding boxes for STL / OBJ / PLY in pure Python, so mesh self-collision
+no longer needs the `[mesh]` (trimesh) extra for those common formats — trimesh
+stays only as the fallback for the long tail (COLLADA `.dae`, glTF). No breaking
+changes; results are identical. Additive over the 1.8 public API. 302 tests.
+
 ### Added
 - **Pure-Python mesh bounds reader — `read_mesh_bounds`.** New
   `fieldpilot_urdf.mesh` module reads a mesh file's vertex bounding box in pure
@@ -426,6 +434,7 @@ standalone, pure-Python, pip-installable package (AGPL-3.0).
   spare-parts BOM, and multi-tenant hosting are **not** part of this package —
   they live in FieldPilot SaaS.
 
+[1.9.0]: https://github.com/DuQuatre/fieldpilot-urdf/releases/tag/v1.9.0
 [1.8.0]: https://github.com/DuQuatre/fieldpilot-urdf/releases/tag/v1.8.0
 [1.7.0]: https://github.com/DuQuatre/fieldpilot-urdf/releases/tag/v1.7.0
 [1.6.0]: https://github.com/DuQuatre/fieldpilot-urdf/releases/tag/v1.6.0
