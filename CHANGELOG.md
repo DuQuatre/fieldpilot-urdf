@@ -6,6 +6,16 @@ to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+_Nothing yet._
+
+## [1.2.0] — 2026-06-17
+
+Continues filling out the **diagnostics** layer (Layer 4). Adds a third fault
+mode, `limit_misconfig` — the first *non-lock* fault (the joint still moves, its
+travel `<limit>` is just wrong), proving the `(fault_mode, symptom)` registry
+extends to faults that aren't a frozen axis. No breaking changes; additive over
+the 1.1 public API. 218 tests.
+
 ### Added
 - **Third fault mode in `diagnose` — `limit_misconfig`.** A mis-set joint travel
   `<limit>` that clips the joint's range without freezing it — the first *non-lock*
@@ -266,6 +276,7 @@ standalone, pure-Python, pip-installable package (AGPL-3.0).
   spare-parts BOM, and multi-tenant hosting are **not** part of this package —
   they live in FieldPilot SaaS.
 
+[1.2.0]: https://github.com/DuQuatre/fieldpilot-urdf/releases/tag/v1.2.0
 [1.1.0]: https://github.com/DuQuatre/fieldpilot-urdf/releases/tag/v1.1.0
 [1.0.0]: https://github.com/DuQuatre/fieldpilot-urdf/releases/tag/v1.0.0
 [0.1.0]: https://github.com/DuQuatre/fieldpilot-urdf/releases/tag/v0.1.0
