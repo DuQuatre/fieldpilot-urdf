@@ -6,6 +6,15 @@ to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [1.8.0] — 2026-06-17
+
+Broadens the **importer**. `import_urdf` could already pull a robot (with full
+`$(find)` / `<xacro:include>` / xacro expansion) from an HTTPS URL; now
+`import_urdf_file` does the same against the local filesystem — a checked-out ROS
+package or exported xacro imports with no server and no network. Strictly local
+(remote includes are refused). No breaking changes; additive over the 1.7 public
+API. 284 tests.
+
 ### Added
 - **Local-filesystem import — `import_urdf_file`.** The network-free twin of
   `import_urdf`: runs the same `$(find)` → `<xacro:include>` → xacro → parse
@@ -401,6 +410,7 @@ standalone, pure-Python, pip-installable package (AGPL-3.0).
   spare-parts BOM, and multi-tenant hosting are **not** part of this package —
   they live in FieldPilot SaaS.
 
+[1.8.0]: https://github.com/DuQuatre/fieldpilot-urdf/releases/tag/v1.8.0
 [1.7.0]: https://github.com/DuQuatre/fieldpilot-urdf/releases/tag/v1.7.0
 [1.6.0]: https://github.com/DuQuatre/fieldpilot-urdf/releases/tag/v1.6.0
 [1.5.0]: https://github.com/DuQuatre/fieldpilot-urdf/releases/tag/v1.5.0
