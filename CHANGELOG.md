@@ -6,6 +6,24 @@ to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Added
+- **Multi-solution IK — `solve_ik_multi`.** Many arms reach a pose more than one
+  way (elbow-up / elbow-down, joint flips); `solve_ik` returns one, this returns
+  all *distinct* ones. Runs the solver from the midpoint seed plus `n_restarts`
+  random in-bounds seeds (default 24), then collapses results landing on the same
+  configuration (joint-space distance below `dedup_tol`, continuous joints
+  compared on the wrapped arc). Returns the distinct solutions as a
+  `list[IKResult]` sorted best-first; `require_converged=True` (default) keeps
+  only converged ones (empty list = none found), `max_solutions` caps the count,
+  `seed` makes it reproducible.
+
+### Changed
+- **`solve_ik` gains random-restart robustness.** New `n_restarts` / `seed`
+  arguments: when the primary solve (from `q_init`/midpoint) doesn't converge,
+  the solver retries from up to `n_restarts` random in-bounds seeds and keeps the
+  best result — a cheap way past local minima on hard targets. `n_restarts=0`
+  (default) leaves the single-shot behaviour exactly as before.
+
 ## [1.5.0] — 2026-06-17
 
 Adds a **motion-planning** layer. Where the 1.x line could *validate* a path

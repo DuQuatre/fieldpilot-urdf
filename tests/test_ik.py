@@ -11,7 +11,7 @@ import pytest
 
 from fieldpilot_urdf import from_xml
 from fieldpilot_urdf.fk import forward_kinematics
-from fieldpilot_urdf.ik import solve_ik
+from fieldpilot_urdf.ik import solve_ik, solve_ik_multi
 
 
 # Same 2-DOF + tool tip arm we used for trajectory tests.
@@ -131,6 +131,110 @@ def test_ik_no_joints_raises():
     r = from_xml('<robot name="r"><link name="a"/></robot>')
     with pytest.raises(ValueError):
         solve_ik(r, target_link="a", target_xyz=(0, 0, 0))
+
+
+# --- restart robustness (n_restarts) ---------------------------------------
+
+def test_n_restarts_default_unchanged(arm):
+    """n_restarts=0 must reproduce the legacy single-shot result exactly."""
+    a = solve_ik(arm, target_link="tip", target_xyz=(0.0, 0.3, 0.2))
+    b = solve_ik(arm, target_link="tip", target_xyz=(0.0, 0.3, 0.2), n_restarts=0)
+    assert a.q == b.q and a.position_error == b.position_error
+
+
+def test_n_restarts_reproducible(arm):
+    a = solve_ik(arm, target_link="tip", target_xyz=(10.0, 0.0, 0.0),
+                 n_restarts=5, seed=3)
+    b = solve_ik(arm, target_link="tip", target_xyz=(10.0, 0.0, 0.0),
+                 n_restarts=5, seed=3)
+    assert a.q == b.q
+
+
+# --- multi-solution IK on a planar 2R arm ----------------------------------
+
+# Planar 2R: two revolute joints about z, link lengths L1 = L2 = 1, tip 1 unit
+# past the second joint. An interior point has two solutions (elbow up/down).
+PLANAR_2R = """\
+<robot name="planar2r">
+  <link name="base"/>
+  <link name="l1"/>
+  <link name="l2"/>
+  <link name="tip"/>
+  <joint name="j1" type="revolute">
+    <parent link="base"/><child link="l1"/>
+    <axis xyz="0 0 1"/><origin xyz="0 0 0"/>
+    <limit lower="-3.14159" upper="3.14159" effort="10" velocity="1"/>
+  </joint>
+  <joint name="j2" type="revolute">
+    <parent link="l1"/><child link="l2"/>
+    <axis xyz="0 0 1"/><origin xyz="1 0 0"/>
+    <limit lower="-3.14159" upper="3.14159" effort="10" velocity="1"/>
+  </joint>
+  <joint name="j_tip" type="fixed">
+    <parent link="l2"/><child link="tip"/>
+    <origin xyz="1 0 0"/>
+  </joint>
+</robot>
+"""
+
+
+@pytest.fixture
+def planar():
+    return from_xml(PLANAR_2R)
+
+
+def test_multi_finds_two_elbow_solutions(planar):
+    """An interior target has elbow-up and elbow-down solutions; multi must
+    surface both, and they must differ in the elbow joint sign."""
+    sols = solve_ik_multi(planar, target_link="tip", target_xyz=(1.0, 0.5, 0.0),
+                          seed=0)
+    assert len(sols) == 2
+    for s in sols:
+        assert s.converged and s.position_error < 1e-5
+        pos = forward_kinematics(planar, q=s.q)["tip"][:3, 3]
+        assert np.allclose(pos[:2], (1.0, 0.5), atol=1e-5)
+    # The two solutions are genuinely distinct: opposite elbow (j2) sign.
+    assert sols[0].q["j2"] * sols[1].q["j2"] < 0
+
+
+def test_multi_sorted_best_first(planar):
+    sols = solve_ik_multi(planar, target_link="tip", target_xyz=(0.8, 0.6, 0.0),
+                          seed=1)
+    errs = [s.position_error + s.orientation_error for s in sols]
+    assert errs == sorted(errs)
+
+
+def test_multi_max_solutions_caps(planar):
+    sols = solve_ik_multi(planar, target_link="tip", target_xyz=(1.0, 0.5, 0.0),
+                          seed=0, max_solutions=1)
+    assert len(sols) == 1
+
+
+def test_multi_unreachable_returns_empty(planar):
+    """Target outside the radius-2 reach: no converged solution."""
+    sols = solve_ik_multi(planar, target_link="tip", target_xyz=(5.0, 0.0, 0.0),
+                          seed=0)
+    assert sols == []
+
+
+def test_multi_unreachable_best_effort(planar):
+    """With require_converged=False, an unreachable target still yields the
+    best-effort attempt(s)."""
+    sols = solve_ik_multi(planar, target_link="tip", target_xyz=(5.0, 0.0, 0.0),
+                          seed=0, require_converged=False)
+    assert len(sols) >= 1
+    assert not sols[0].converged
+
+
+def test_multi_reproducible(planar):
+    a = solve_ik_multi(planar, target_link="tip", target_xyz=(1.0, 0.5, 0.0), seed=7)
+    b = solve_ik_multi(planar, target_link="tip", target_xyz=(1.0, 0.5, 0.0), seed=7)
+    assert [s.q for s in a] == [s.q for s in b]
+
+
+def test_multi_unknown_link_raises(planar):
+    with pytest.raises(KeyError):
+        solve_ik_multi(planar, target_link="ghost", target_xyz=(0, 0, 0))
 
 
 if __name__ == "__main__":
