@@ -52,6 +52,10 @@ Installed by `pip install fieldpilot-urdf`. No optional extra required.
 **Workspace & trajectory** — `sample_workspace`, `WorkspaceResult`,
 `check_trajectory`, `StepFinding`, `trajectory_summary`
 
+**Motion planning** — `plan_path`, `PlanResult`, `shorten_path`, `path_length`
+(RRT-Connect: collision-free joint-space path between two configs; a returned
+`path` feeds straight into `check_trajectory` / `forward_kinematics`)
+
 ### Layer 4 — Diagnostics
 
 **Localise** — `rank_root_causes`, `RootCauseCandidate`, `affected_links`,

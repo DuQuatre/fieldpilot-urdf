@@ -12,7 +12,7 @@ robotics toolkit — small, self-contained, pure-Python. Point it at a robot on
 GitHub and get a working kinematic model in three lines.
 
 > **Status: `1.4.0` — stable, published on [PyPI](https://pypi.org/project/fieldpilot-urdf/).**
-> 230 passing tests, a documented [public API](#public-api--stability) under
+> 247 passing tests, a documented [public API](#public-api--stability) under
 > SemVer. `pip install fieldpilot-urdf` (see [`RELEASING.md`](RELEASING.md) for
 > how releases are cut).
 
@@ -24,7 +24,7 @@ you install only the weight you use. The arc runs **import → diagnose**:
 | Layer | What it does | Install |
 |------:|--------------|---------|
 | **1 · Model** | get a robot (URL / file / code), validate, repair | core |
-| **2 · Kinematics** | FK, IK, self-collision, workspace, trajectory | core |
+| **2 · Kinematics** | FK, IK, self-collision, workspace, trajectory, motion planning | core |
 | **3 · Dynamics + Sim** | symbolic equations of motion, PyBullet | `[dynamics]`, `[sim]` |
 | **4 · Diagnostics** | localise a fault, then hypothesis-test it | core |
 
