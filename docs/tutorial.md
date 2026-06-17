@@ -218,15 +218,18 @@ print(report.verdict, report.confidence)   # CONFIRMED / REFUTED / INCONCLUSIVE
 print(report.summary)                       # human-readable reasoning
 ```
 
-Two symptoms are supported — `cant_reach` (above) and `self_collision` (the
-robot collides with itself at a commanded pose: pass `at_config=` and, if known,
-`colliding_links=`). Three fault modes test them: `motor_dead` (a dead actuator,
-locked at the zero pose), `joint_stuck` (a joint jammed at a reported angle —
-pass `stuck_at=`), and `limit_misconfig` (a mis-set travel `<limit>` that clips
-the joint's range without freezing it — pass `bad_lower=`/`bad_upper=`;
-`cant_reach` only). The `(fault_mode, symptom)` pair selects the simulator; each
-injects the fault on a copy, re-runs the relevant primitive (IK or collision
-check), and checks whether the symptom reproduces.
+Three symptoms are supported — `cant_reach` (above), `self_collision` (the robot
+collides with itself at a commanded pose: pass `at_config=` and, if known,
+`colliding_links=`), and `reduced_workspace` (a link's reachable envelope shrank:
+pass `target_link=` and an optional `min_shrinkage=` threshold). Three fault
+modes test them: `motor_dead` (a dead actuator, locked at the zero pose),
+`joint_stuck` (a joint jammed at a reported angle — pass `stuck_at=`), and
+`limit_misconfig` (a mis-set travel `<limit>` that clips the joint's range —
+pass `bad_lower=`/`bad_upper=`). The `(fault_mode, symptom)` pair selects the
+simulator; each injects the fault on a copy, re-runs the relevant primitive (IK,
+collision check, or workspace sampling), and checks whether the symptom
+reproduces. Not every pair is sound — e.g. `limit_misconfig` × `self_collision`
+isn't registered — so an unsupported pair returns `INCONCLUSIVE`.
 
 The verdict is grounded: `CONFIRMED` means the target was reachable on the
 healthy robot and became unreachable once the fault was injected. `INCONCLUSIVE`
