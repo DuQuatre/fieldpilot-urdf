@@ -24,6 +24,11 @@ Installed by `pip install fieldpilot-urdf`. No optional extra required.
 `fetch_urdf`, `expand_xacro`, `resolve_includes`, `substitute_find`,
 `fetch_meshes`, `infer_package_root`, `package_uri_parts`
 
+**Import from disk** — `import_urdf_file` (the network-free twin of
+`import_urdf`: same `$(find)` → includes → xacro → parse pipeline against the
+local filesystem, with `package://` resolved via a `package_roots` map), plus
+`resolve_includes_local`, `expand_xacro_local`
+
 **Model types** (pydantic) — `Robot`, `Link`, `Joint`, `JointLimit`, `Origin`,
 `Inertial`, `Inertia`, `Visual`, `Collision`, `Geometry`, `Box`, `Cylinder`,
 `Sphere`, `Mesh`, `FrameRef`, `LoopClosure`

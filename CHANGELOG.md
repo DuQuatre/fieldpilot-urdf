@@ -6,6 +6,19 @@ to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Added
+- **Local-filesystem import — `import_urdf_file`.** The network-free twin of
+  `import_urdf`: runs the same `$(find)` → `<xacro:include>` → xacro → parse
+  pipeline against a `.urdf`/`.xacro` on disk, so a checked-out ROS package or
+  exported xacro imports without standing up an HTTPS server (until now,
+  `from_file` only parsed *plain* URDF — no includes, no macros). `package://`
+  references resolve via a caller-supplied `package_roots` ({package: directory})
+  map; relative includes resolve against the file's directory; `${load_yaml(...)}`
+  reads configs from disk. Strictly local — a remote `<xacro:include>` is a hard
+  error (use `import_urdf` for network sources). `expand_macros=False` skips the
+  pipeline for an already-plain URDF. Also exported: `resolve_includes_local` and
+  `expand_xacro_local` (the lower-level pieces, mirroring their HTTPS twins).
+
 ## [1.7.0] — 2026-06-17
 
 Deepens the **dynamics** layer. `SymbolicDynamics` produced the instantaneous
