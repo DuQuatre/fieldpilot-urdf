@@ -85,6 +85,12 @@ Each layer below is lazily imported, so a core install never pays for it.
 
 `SymbolicDynamics`, `UnsupportedSystemError`
 
+### Layer 3 — Dynamics simulation — `fieldpilot_urdf.simulate` (`[dynamics]`)
+
+`integrate_dynamics`, `Trajectory`, `inverse_dynamics`, `gravity_torques`
+(roll the symbolic forward dynamics forward in time — RK4 / semi-implicit Euler,
+pure NumPy — plus inverse dynamics and gravity-compensation torques)
+
 ### Layer 3 — Closed-loop dynamics — `fieldpilot_urdf.constrained` / `.loops` (`[dynamics]`)
 
 - `fieldpilot_urdf.constrained`: `ConstrainedDynamics`, `constrained_dynamics`
