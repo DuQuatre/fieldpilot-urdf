@@ -6,6 +6,16 @@ to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+_Nothing yet._
+
+## [1.3.0] — 2026-06-17
+
+Rounds out the **diagnostics** symptom set. Adds a third symptom,
+`reduced_workspace`, bringing the `(fault_mode, symptom)` registry to seven live
+combinations (a near-complete 3×3 — only the unsound `limit_misconfig` ×
+`self_collision` pair is intentionally absent). First use of `sample_workspace`
+inside `diagnose`. No breaking changes; additive over the 1.2 public API. 225 tests.
+
 ### Added
 - **Third symptom in `diagnose` — `reduced_workspace`.** Diagnose a shrunken
   reachable envelope: the simulator samples the end-effector's workspace
@@ -285,6 +295,7 @@ standalone, pure-Python, pip-installable package (AGPL-3.0).
   spare-parts BOM, and multi-tenant hosting are **not** part of this package —
   they live in FieldPilot SaaS.
 
+[1.3.0]: https://github.com/DuQuatre/fieldpilot-urdf/releases/tag/v1.3.0
 [1.2.0]: https://github.com/DuQuatre/fieldpilot-urdf/releases/tag/v1.2.0
 [1.1.0]: https://github.com/DuQuatre/fieldpilot-urdf/releases/tag/v1.1.0
 [1.0.0]: https://github.com/DuQuatre/fieldpilot-urdf/releases/tag/v1.0.0
