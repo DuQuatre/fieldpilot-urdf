@@ -52,6 +52,9 @@ from .trajectory import (
 from .planning import (
     PlanResult, path_length, plan_path, shorten_path,
 )
+from .cartesian import (
+    CartesianPlanResult, interpolate_pose, plan_cartesian_path, pose_error,
+)
 from .fault_propagation import (
     RootCauseCandidate, affected_links, criticality, rank_root_causes,
 )
@@ -75,6 +78,7 @@ __all__ = [
     "Patch", "REPAIRS", "UNFIXABLE_CODES", "repair",
     "StepFinding", "WorkspaceResult", "check_trajectory", "sample_workspace", "trajectory_summary",
     "PlanResult", "plan_path", "shorten_path", "path_length",
+    "plan_cartesian_path", "CartesianPlanResult", "interpolate_pose", "pose_error",
     "IKResult", "solve_ik", "solve_ik_multi",
     "geometric_jacobian", "jacobian_joints", "joint_velocity_to_twist",
     "manipulability", "singularity_report", "SingularityReport",

@@ -6,6 +6,25 @@ to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Added
+- **Cartesian path planning — `plan_cartesian_path`.** New
+  `fieldpilot_urdf.cartesian` module: the task-space complement to
+  `plan_path` (which plans in joint space). `plan_cartesian_path` returns a
+  joint-space path whose chosen link follows a **straight line** in SE(3) — lerp
+  position, slerp orientation — from its current pose to a target pose. The
+  engine is a **resolved-rate** servo over the 1.10 geometric Jacobian, stepping
+  with an SVD pseudo-inverse that **damps only the singular directions**
+  (well-conditioned directions are inverted exactly, so it reaches tight
+  tolerance, while directions collapsing toward a singularity are smoothly
+  damped instead of blowing up). Pass `target_rpy=None` to hold orientation (a
+  pure translation). Returns a `CartesianPlanResult` (`path`, `success`,
+  `reached_fraction`, `position_error`, `orientation_error`, `message`); an
+  unreachable target / joint limit / singularity yields `success=False` with the
+  partial path and the fraction of the line followed. The `path` drops straight
+  into `check_trajectory` / `forward_kinematics`, like `plan_path`'s result.
+  Also exported: `interpolate_pose` (SE(3) lerp+slerp) and `pose_error`
+  (position / orientation error between two poses). Pure NumPy.
+
 ## [1.10.0] — 2026-06-17
 
 Adds the **velocity-kinematics** layer. The package had FK (*where* a link is)

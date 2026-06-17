@@ -103,6 +103,18 @@ rep = singularity_report(robot, q, "tool0")             # σ_min, condition numb
 print(rep.is_singular, rep.condition_number)
 ```
 
+**Cartesian motion** plans in task space where `plan_path` plans in joint space:
+drive the tool along a straight line, get back a joint path that feeds the same
+validators.
+
+```python
+from fieldpilot_urdf import plan_cartesian_path
+
+res = plan_cartesian_path(robot, "tool0", target_xyz=(0.5, 0.0, 0.4), start_q=q)
+print(res.success, res.reached_fraction)                # straight-line move in SE(3)
+print(res.path[-1])                                     # final joint config
+```
+
 ### Render (needs the `[viz]` extra)
 
 ```python
