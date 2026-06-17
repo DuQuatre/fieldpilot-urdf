@@ -18,8 +18,10 @@ modes: ``motor_dead`` (a dead actuator, locked at the zero pose), ``joint_stuck`
 ``<limit>`` that clips the joint's range without freezing it). Not every pair has
 a sound mapping (e.g. ``limit_misconfig`` × ``self_collision`` does not); the
 ``(fault_mode, symptom)`` pairs that do are registered in ``_SIMULATORS``, the
-single extension point. Hypotheses are supplied by the caller. The
-verdict half is fully symbolic and deterministic: **no network, no API key.** The
+single extension point. Hypotheses may be supplied by the caller, or — when none
+are given — generated from the symptom by ranking suspect joints with
+``rank_root_causes`` and proposing a ``motor_dead`` for each. The verdict half is
+fully symbolic and deterministic: **no network, no API key.** The richer
 natural-language front-end that *generates* hypotheses from a technician's report
 via an LLM lives in the companion ``diagnose_nl`` module (gated); this core is the
 open showcase.
@@ -34,6 +36,7 @@ from pydantic import BaseModel, Field, model_validator
 
 from .collisions import detect_self_collisions
 from .diagnostics import Finding, run_all
+from .fault_propagation import rank_root_causes
 from .faults import freeze_joint_at, misconfigure_limit
 from .ik import solve_ik
 from .models import Robot
@@ -113,6 +116,7 @@ class DiagnoseReport(BaseModel):
     confidence: float = 0.0
     evidence: dict = Field(default_factory=dict)
     summary: str = ""
+    auto_generated: bool = False    # hypotheses were ranked by diagnose, not supplied
 
 
 # --- Tier 0 ----------------------------------------------------------------
@@ -356,8 +360,44 @@ _SIMULATORS = {
 }
 
 
-def diagnose(robot: Robot, symptom: Symptom, hypotheses: list[Hypothesis]) -> DiagnoseReport:
-    """Run the two-tier loop. Hypotheses are caller-supplied."""
+# --- auto-hypothesis generation --------------------------------------------
+# When the caller supplies no hypotheses, derive candidates from the symptom:
+# rank the suspect joints with `rank_root_causes` (graph precision×recall over
+# the affected links) and propose a parameter-free `motor_dead` for each. The
+# parametric modes (joint_stuck angle, limit_misconfig bounds) can't be guessed,
+# so auto-generation stays with the one mode that needs no parameters; the
+# best-first loop then finds whichever ranked joint actually reproduces it.
+
+def _observed_links(symptom: Symptom) -> list[str]:
+    if symptom.kind in ("cant_reach", "reduced_workspace") and symptom.target_link:
+        return [symptom.target_link]
+    if symptom.kind == "self_collision" and symptom.colliding_links:
+        return list(symptom.colliding_links)
+    return []
+
+
+def _auto_hypotheses(robot: Robot, symptom: Symptom, max_auto: int) -> list[Hypothesis]:
+    # A dead motor only makes sense on an actuated joint — drop fixed ones (and
+    # any link names rank_root_causes may surface).
+    movable = {j.name for j in robot.joints if j.type != "fixed"}
+    observed = _observed_links(symptom)
+    if observed:
+        ranked = [c.target for c in rank_root_causes(robot, observed)]
+    else:
+        # self_collision with no reported pair: the commanded joints are the
+        # natural suspects (no ranking signal to order them).
+        ranked = list(symptom.at_config)
+    joints = [j for j in ranked if j in movable][:max_auto]
+    return [Hypothesis(suspect_joint=j, fault_mode="motor_dead") for j in joints]
+
+
+def diagnose(
+    robot: Robot, symptom: Symptom,
+    hypotheses: Optional[list[Hypothesis]] = None, *, max_auto: int = 5,
+) -> DiagnoseReport:
+    """Run the two-tier loop. If ``hypotheses`` is omitted (or empty), diagnose
+    ranks suspect joints from the symptom and tests a ``motor_dead`` on each (up
+    to ``max_auto``); the returned report has ``auto_generated=True``."""
     link_names = {l.name for l in robot.links}
     joint_names = {j.name for j in robot.joints}
     if symptom.kind in ("cant_reach", "reduced_workspace"):
@@ -371,6 +411,24 @@ def diagnose(robot: Robot, symptom: Symptom, hypotheses: list[Hypothesis]) -> Di
             if ln not in link_names:
                 raise KeyError(f"unknown link in colliding_links: {ln!r}")
 
+    auto_generated = not hypotheses
+    if auto_generated:
+        hypotheses = _auto_hypotheses(robot, symptom, max_auto)
+        if not hypotheses:
+            return DiagnoseReport(
+                verdict=Verdict.INCONCLUSIVE, tier=1, confidence=0.0, auto_generated=True,
+                evidence={"auto_candidates": []},
+                summary="No hypotheses supplied and none could be ranked for this symptom.",
+            )
+
+    report = _run_tiers(robot, symptom, hypotheses)
+    if auto_generated:
+        report.auto_generated = True
+        report.evidence.setdefault("auto_candidates", [h.suspect_joint for h in hypotheses])
+    return report
+
+
+def _run_tiers(robot: Robot, symptom: Symptom, hypotheses: list[Hypothesis]) -> DiagnoseReport:
     # Tier 0 — one coarse static scan; a malformation on a suspect explains it.
     # Only meaningful for cant_reach: a zeroed-effort joint (R003) is a dead
     # motor. A static rule says nothing about a configuration-dependent collision.

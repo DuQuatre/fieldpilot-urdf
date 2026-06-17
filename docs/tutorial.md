@@ -218,6 +218,16 @@ print(report.verdict, report.confidence)   # CONFIRMED / REFUTED / INCONCLUSIVE
 print(report.summary)                       # human-readable reasoning
 ```
 
+**Skip the localise step entirely** if you like: call `diagnose` with *no*
+hypotheses and it ranks the suspects for you (via `rank_root_causes`) and tests a
+`motor_dead` on each, best-first:
+
+```python
+report = diagnose(robot, Symptom(kind="cant_reach", target_link="tool0",
+                                 target_xyz=(0.4, 0.1, 0.5)))
+print(report.verdict, report.suspect_joint, report.auto_generated)  # ... True
+```
+
 Three symptoms are supported — `cant_reach` (above), `self_collision` (the robot
 collides with itself at a commanded pose: pass `at_config=` and, if known,
 `colliding_links=`), and `reduced_workspace` (a link's reachable envelope shrank:
