@@ -6,6 +6,14 @@ to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [1.4.0] — 2026-06-17
+
+Closes the **diagnostics** loop into a self-bootstrapping engine. `diagnose` now
+generates its own hypotheses from the symptom — `diagnose(robot, symptom)` works
+with zero supplied candidates by chaining graph root-cause ranking into the
+hypothesis-and-test loop. No breaking changes; an explicit `hypotheses` list
+behaves exactly as before. Additive over the 1.3 public API. 230 tests.
+
 ### Added
 - **Auto-hypothesis generation in `diagnose`.** `hypotheses` is now optional —
   when omitted (or empty), `diagnose` derives candidates from the symptom by
@@ -306,6 +314,7 @@ standalone, pure-Python, pip-installable package (AGPL-3.0).
   spare-parts BOM, and multi-tenant hosting are **not** part of this package —
   they live in FieldPilot SaaS.
 
+[1.4.0]: https://github.com/DuQuatre/fieldpilot-urdf/releases/tag/v1.4.0
 [1.3.0]: https://github.com/DuQuatre/fieldpilot-urdf/releases/tag/v1.3.0
 [1.2.0]: https://github.com/DuQuatre/fieldpilot-urdf/releases/tag/v1.2.0
 [1.1.0]: https://github.com/DuQuatre/fieldpilot-urdf/releases/tag/v1.1.0
