@@ -7,7 +7,7 @@ guards it can never drift apart.
 """
 from __future__ import annotations
 
-from .models import Robot
+from .models import Origin, Robot
 
 
 def inject_motor_fault(robot: Robot, joint_name: str) -> Robot:
@@ -38,6 +38,30 @@ def freeze_joint(robot: Robot, joint_name: str) -> Robot:
     Mutates and returns ``robot``. Raises ``KeyError`` if the joint is unknown.
     """
     j = robot.joint(joint_name)  # raises KeyError on an unknown joint name
+    j.type = "fixed"
+    return robot
+
+
+def freeze_joint_at(robot: Robot, joint_name: str, angle: float) -> Robot:
+    """Lock a joint *at a non-zero pose* ``angle`` — a joint jammed/stuck part
+    way through its travel (vs :func:`freeze_joint`, which locks at the neutral
+    zero pose).
+
+    The joint's motion at ``angle`` is baked into its ``<origin>`` and the joint
+    is set ``fixed``, so FK/IK see a rigid offset frame holding the stuck pose.
+    ``angle`` in radians for revolute/continuous joints, metres for prismatic.
+    ``angle == 0`` reduces to :func:`freeze_joint`. Mutates and returns ``robot``.
+    Raises ``KeyError`` if the joint is unknown.
+    """
+    # Local import: faults is otherwise dependency-free; FK pulls in numpy/graph.
+    from .fk import R_to_rpy, joint_motion, origin_to_T
+
+    j = robot.joint(joint_name)  # raises KeyError on an unknown joint name
+    if j.type == "fixed" or angle == 0.0:
+        j.type = "fixed"
+        return robot
+    T = origin_to_T(j.origin) @ joint_motion(j, angle)   # parent->child at `angle`
+    j.origin = Origin(xyz=tuple(float(x) for x in T[:3, 3]), rpy=R_to_rpy(T[:3, :3]))
     j.type = "fixed"
     return robot
 

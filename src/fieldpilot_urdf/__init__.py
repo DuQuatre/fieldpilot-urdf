@@ -17,11 +17,11 @@ from .collisions import (
     link_collision_aabbs, transform_aabb, unresolved_meshes,
 )
 from .diagnostics import Finding, RULES, run_all, summary
-from .faults import fault_source_tag, freeze_joint, inject_motor_fault
+from .faults import fault_source_tag, freeze_joint, freeze_joint_at, inject_motor_fault
 from .diagnose_core import (
     DiagnoseReport, Hypothesis, Symptom, Verdict, diagnose,
 )
-from .fk import forward_kinematics, joint_motion, origin_to_T, rotation_around_axis, rpy_to_R
+from .fk import forward_kinematics, joint_motion, origin_to_T, R_to_rpy, rotation_around_axis, rpy_to_R
 from .graph import build_graph, chain, is_tree, joints_on_path, leaf_links, root_links, subtree
 from .loader import from_file, from_xml, to_xml
 from .models import (
@@ -54,9 +54,9 @@ __all__ = [
     "build_graph", "chain", "is_tree", "joints_on_path", "leaf_links",
     "root_links", "subtree",
     "Finding", "RULES", "run_all", "summary",
-    "inject_motor_fault", "freeze_joint", "fault_source_tag",
+    "inject_motor_fault", "freeze_joint", "freeze_joint_at", "fault_source_tag",
     "diagnose", "Symptom", "Hypothesis", "Verdict", "DiagnoseReport",
-    "forward_kinematics", "joint_motion", "origin_to_T", "rotation_around_axis", "rpy_to_R",
+    "forward_kinematics", "joint_motion", "origin_to_T", "R_to_rpy", "rotation_around_axis", "rpy_to_R",
     "aabb_overlap", "detect_self_collisions", "link_collision_aabbs", "transform_aabb",
     "MeshResolver", "clear_mesh_cache", "unresolved_meshes",
     "save_robot", "load_robot", "load_meta", "load_resolver", "list_robots", "delete_robot",

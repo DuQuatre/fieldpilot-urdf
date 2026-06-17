@@ -5,7 +5,10 @@ import numpy as np
 
 from fieldpilot_urdf.collisions import aabb_overlap, detect_self_collisions, link_collision_aabbs
 from fieldpilot_urdf.diagnostics import run_all
-from fieldpilot_urdf.fk import forward_kinematics, joint_motion, origin_to_T, rotation_around_axis, rpy_to_R
+from fieldpilot_urdf.faults import freeze_joint_at
+from fieldpilot_urdf.fk import (
+    forward_kinematics, joint_motion, origin_to_T, R_to_rpy, rotation_around_axis, rpy_to_R,
+)
 from fieldpilot_urdf.models import (
     Box, Collision, Joint, JointLimit, Link, Origin, Robot, Sphere,
 )
@@ -13,6 +16,43 @@ from fieldpilot_urdf.models import (
 
 def _almost(a, b, tol=1e-9):
     return np.allclose(a, b, atol=tol)
+
+
+# --- R_to_rpy (inverse of rpy_to_R) ----------------------------------------
+
+def test_R_to_rpy_round_trips_random():
+    rng = np.random.default_rng(0)
+    for _ in range(500):
+        rpy = tuple(rng.uniform(-np.pi, np.pi, 3))
+        assert _almost(rpy_to_R(R_to_rpy(rpy_to_R(rpy))), rpy_to_R(rpy), tol=1e-9)
+
+
+def test_R_to_rpy_gimbal_lock():
+    # pitch = +90°: roll/yaw degenerate; the recovered rpy must still rebuild R.
+    R = rpy_to_R((0.3, np.pi / 2, 0.7))
+    assert _almost(rpy_to_R(R_to_rpy(R)), R, tol=1e-9)
+
+
+def test_freeze_joint_at_preserves_locked_pose():
+    """Baking a joint's motion at `angle` into a fixed origin must leave FK of
+    the (now neutral-pose) frozen robot identical to FK of the live robot held
+    at `angle`."""
+    arm = Robot(
+        name="a",
+        links=[Link(name="base"), Link(name="l1"), Link(name="tool")],
+        joints=[
+            Joint(name="j", type="revolute", parent="base", child="l1",
+                  origin=Origin(xyz=(0.1, 0, 0.2)), axis=(0, 1, 0),
+                  limit=JointLimit(lower=-3, upper=3, effort=1, velocity=1)),
+            Joint(name="w", type="fixed", parent="l1", child="tool",
+                  origin=Origin(xyz=(0.3, 0, 0))),
+        ],
+    )
+    angle = 0.7
+    live = forward_kinematics(arm, {"j": angle})["tool"]
+    frozen = freeze_joint_at(arm.model_copy(deep=True), "j", angle)
+    assert frozen.joint("j").type == "fixed"
+    assert _almost(forward_kinematics(frozen)["tool"], live)
 
 
 # --- FK math ---------------------------------------------------------------

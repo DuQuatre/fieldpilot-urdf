@@ -218,6 +218,11 @@ print(report.verdict, report.confidence)   # CONFIRMED / REFUTED / INCONCLUSIVE
 print(report.summary)                       # human-readable reasoning
 ```
 
+Two fault modes are supported today: `motor_dead` (a dead actuator, locked at
+the zero pose) and `joint_stuck` (a joint jammed at a reported angle — pass
+`stuck_at=` on the `Hypothesis`). Both reduce to the same symbolic test: lock the
+axis, re-run IK, see if the symptom reproduces.
+
 The verdict is grounded: `CONFIRMED` means the target was reachable on the
 healthy robot and became unreachable once the fault was injected. `INCONCLUSIVE`
 means the symptom couldn't even be reproduced on the healthy model (e.g. the
