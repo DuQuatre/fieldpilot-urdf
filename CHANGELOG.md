@@ -6,6 +6,8 @@ to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [0.8.0] — 2026-06-17
+
 ### Added
 - **Numerical simulation (`[sim]` extra)** — `sim.PyBulletSim` drives a URDF
   `Robot` in PyBullet: load (DIRECT/GUI), step, position/velocity control, and
