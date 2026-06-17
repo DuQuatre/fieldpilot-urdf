@@ -15,6 +15,7 @@ from typing import Optional
 import numpy as np
 
 from .fk import forward_kinematics, origin_to_T
+from .mesh import read_mesh_bounds
 from .models import Box, Cylinder, Geometry, Mesh, Robot, Sphere
 
 AABB = tuple[np.ndarray, np.ndarray]  # (min_xyz, max_xyz)
@@ -68,15 +69,24 @@ def _load_mesh_aabb(m: Mesh, resolver: Optional[MeshResolver]) -> Optional[AABB]
     cached = _MESH_AABB_CACHE.get(key)
     if cached is not None:
         return cached
-    try:
-        import trimesh  # lazy: only paid if a mesh is actually being resolved
-        mesh = trimesh.load(path, force="mesh")
-    except Exception:  # noqa: BLE001 — corrupt file, unsupported format, etc.
-        return None
-    if mesh is None or not hasattr(mesh, "bounds") or mesh.bounds is None:
-        return None
-    mn = np.array(mesh.bounds[0], dtype=float) * np.array(m.scale, dtype=float)
-    mx = np.array(mesh.bounds[1], dtype=float) * np.array(m.scale, dtype=float)
+
+    # Try the pure-Python reader first (STL/OBJ/PLY — no [mesh] extra needed);
+    # fall back to trimesh for everything else (COLLADA .dae, glTF, …).
+    bounds = read_mesh_bounds(path)
+    if bounds is not None:
+        raw_mn, raw_mx = np.array(bounds[0], dtype=float), np.array(bounds[1], dtype=float)
+    else:
+        try:
+            import trimesh  # lazy: only paid when the native reader can't handle it
+            mesh = trimesh.load(path, force="mesh")
+        except Exception:  # noqa: BLE001 — corrupt file, unsupported format, etc.
+            return None
+        if mesh is None or not hasattr(mesh, "bounds") or mesh.bounds is None:
+            return None
+        raw_mn, raw_mx = np.array(mesh.bounds[0], dtype=float), np.array(mesh.bounds[1], dtype=float)
+
+    mn = raw_mn * np.array(m.scale, dtype=float)
+    mx = raw_mx * np.array(m.scale, dtype=float)
     aabb = (np.minimum(mn, mx), np.maximum(mn, mx))
     _MESH_AABB_CACHE[key] = aabb
     return aabb

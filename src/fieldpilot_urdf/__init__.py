@@ -17,6 +17,7 @@ from .collisions import (
     link_collision_aabbs, transform_aabb, unresolved_meshes,
 )
 from .diagnostics import Finding, RULES, run_all, summary
+from .mesh import SUPPORTED_FORMATS, read_mesh_bounds
 from .faults import (
     fault_source_tag, freeze_joint, freeze_joint_at, inject_motor_fault, misconfigure_limit,
 )
@@ -65,6 +66,7 @@ __all__ = [
     "forward_kinematics", "joint_motion", "origin_to_T", "R_to_rpy", "rotation_around_axis", "rpy_to_R",
     "aabb_overlap", "detect_self_collisions", "link_collision_aabbs", "transform_aabb",
     "MeshResolver", "clear_mesh_cache", "unresolved_meshes",
+    "read_mesh_bounds", "SUPPORTED_FORMATS",
     "save_robot", "load_robot", "load_meta", "load_resolver", "list_robots", "delete_robot",
     "Patch", "REPAIRS", "UNFIXABLE_CODES", "repair",
     "StepFinding", "WorkspaceResult", "check_trajectory", "sample_workspace", "trajectory_summary",

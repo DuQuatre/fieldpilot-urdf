@@ -57,6 +57,10 @@ elbow-down)
 `link_collision_aabbs`, `transform_aabb`, `MeshResolver`, `clear_mesh_cache`,
 `unresolved_meshes`
 
+**Mesh bounds** — `read_mesh_bounds`, `SUPPORTED_FORMATS` (pure-Python vertex
+AABB for `.stl` / `.obj` / `.ply` — no `[mesh]` extra; mesh self-collision uses
+this and falls back to `trimesh` only for other formats like `.dae`)
+
 **Workspace & trajectory** — `sample_workspace`, `WorkspaceResult`,
 `check_trajectory`, `StepFinding`, `trajectory_summary`
 
