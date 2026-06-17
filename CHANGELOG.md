@@ -6,7 +6,56 @@ to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
-_Nothing yet — `1.0.0.dev0` development cycle._
+_Nothing yet._
+
+## [1.0.0] — 2026-06-17
+
+**First stable release.** `fieldpilot-urdf` declares its API stable under
+[SemVer](https://semver.org/): the open robotics core of FieldPilot, complete as
+a four-layer ladder you climb from a URL to a confirmed fault — and you install
+only the weight you use.
+
+1. **Model** (core) — import any ROS robot from an HTTPS URL (`import_urdf`
+   expands xacro / `$(find)` / `<xacro:include>` in-process, with SSRF defences),
+   parse URDF ⇄ a pydantic model, validate against 8 lint rules (R001–R008), and
+   deterministically auto-`repair` the fixable ones.
+2. **Kinematics** (core) — forward kinematics, numerical joint-limit-aware
+   inverse kinematics, AABB + mesh self-collision, and workspace / trajectory
+   sampling.
+3. **Dynamics & simulation** (`[dynamics]`, `[sim]`) — `SymbolicDynamics` builds
+   Kane's-method equations of motion for tree robots (symbolic `M(q)`, forcing,
+   and a NumPy forward-dynamics callable); `LoopClosure` +
+   `constrained.constrained_dynamics` extend it to closed loops with Baumgarte
+   stabilisation; `sim.PyBulletSim` drives the same model numerically, fed by the
+   import pipeline and cross-validated against the symbolic dynamics to ~1e-5.
+4. **Diagnostics** (core) — localise a fault on the kinematic graph
+   (`rank_root_causes`, `affected_links`, `criticality`) and prove it with the
+   two-tier hypothesis-and-test loop (`diagnose`), which injects a fault on a copy
+   and checks it reproduces the symptom before returning CONFIRMED / REFUTED /
+   INCONCLUSIVE.
+
+The core install stays pure-Python and light (`pydantic` + `numpy` + `scipy` +
+`networkx`); mesh, viz, dynamics, and sim are opt-in extras. 197 tests across
+Python 3.10–3.13.
+
+This release adds no new physics over `0.9.0` — it's the **stability + story**
+milestone:
+
+### Added
+- **Tutorial** — `docs/tutorial.md` walks all four layers end to end (import →
+  diagnose), with `examples/full_stack_tour.py` as its runnable companion (runs
+  on the core install; lights up Layer 3 when `[dynamics,sim]` are present).
+- **Public API reference** — `docs/api.md` documents the 1.0 stability contract:
+  what's public (the top-level `__all__` + each optional submodule's surface)
+  versus internal (`_`-prefixed names, the `_dyn_adapter` shim).
+
+### Changed
+- **Development Status** classifier `3 - Alpha` → `5 - Production/Stable`.
+- **README** restructured around the four-layer ladder (model → kinematics →
+  dynamics+sim → diagnostics) instead of a flat feature list, leading with the
+  import → diagnose arc and a stability/public-API section.
+- **CI** now smoke-runs the bundled examples (under all extras), not just the
+  unit tests.
 
 ## [0.9.0] — 2026-06-17
 
@@ -171,4 +220,5 @@ standalone, pure-Python, pip-installable package (AGPL-3.0).
   spare-parts BOM, and multi-tenant hosting are **not** part of this package —
   they live in FieldPilot SaaS.
 
+[1.0.0]: https://github.com/DuQuatre/fieldpilot-urdf/releases/tag/v1.0.0
 [0.1.0]: https://github.com/DuQuatre/fieldpilot-urdf/releases/tag/v0.1.0

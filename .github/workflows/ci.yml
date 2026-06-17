@@ -57,6 +57,16 @@ jobs:
           LIBGL_ALWAYS_SOFTWARE: "1"
         run: pytest -q -rs
 
+      # The bundled examples are part of the docs (full_stack_tour.py backs the
+      # tutorial). Smoke-run them so a broken example fails CI, not a user. All
+      # three are offline + deterministic; with [dev] installed, full_stack_tour
+      # exercises the [dynamics] and [sim] layers too.
+      - name: Run examples
+        run: |
+          python examples/ducky_diagnosis.py
+          python examples/closed_loop_sim.py
+          python examples/full_stack_tour.py
+
   build:
     name: build & check distribution
     runs-on: ubuntu-latest
