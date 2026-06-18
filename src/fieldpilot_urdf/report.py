@@ -52,6 +52,16 @@ class ReportImage(BaseModel):
         return f"data:{self.content_type};base64,{self.data_b64}"
 
 
+class SparePart(BaseModel):
+    """A spare part the technician should bring for the recommended fix."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    reference: str = Field(..., description="Part reference / SKU")
+    name: str = Field(..., description="Part designation (French)")
+    quantity: int = Field(1, ge=1, description="Quantity required")
+
+
 class DiagnosticReport(BaseModel):
     """Everything a diagnostic report carries."""
 
@@ -64,6 +74,8 @@ class DiagnosticReport(BaseModel):
     fault: Optional[str] = Field(None, description="The diagnosed fault")
     confidence: Optional[float] = Field(None, description="Diagnosis confidence in [0, 1]")
     solution: Optional[str] = Field(None, description="Recommended fix")
+    spare_parts: list[SparePart] = Field(default_factory=list,
+                                         description="Spare parts for the recommended fix")
     calibration: dict[str, float] = Field(default_factory=dict,
                                           description="Per-joint calibration offsets, if measured")
     photos: list[ReportImage] = Field(default_factory=list, description="Technician-supplied photos")
@@ -179,6 +191,15 @@ def render_report_html(report: DiagnosticReport) -> str:
         rows.append(("Solution recommandée", report.solution))
     info = "".join(f"<tr><th>{e(k)}</th><td>{e(str(v))}</td></tr>" for k, v in rows)
 
+    parts = ""
+    if report.spare_parts:
+        prows = "".join(
+            f"<tr><td>{e(p.reference)}</td><td>{e(p.name)}</td><td>{p.quantity}</td></tr>"
+            for p in report.spare_parts)
+        parts = ("<h2>Pièces de rechange</h2><table>"
+                 "<tr><th>Référence</th><th>Désignation</th><th>Qté</th></tr>"
+                 f"{prows}</table>")
+
     cal = ""
     if report.calibration:
         items = "".join(f"<li>{e(j)} : {off:+.4f} rad/m</li>"
@@ -220,6 +241,6 @@ def render_report_html(report: DiagnosticReport) -> str:
         f"<style>{style}</style></head><body>"
         f"<h1>Rapport de diagnostic — {e(report.reference)}</h1>"
         f"<table>{info}</table>"
-        f"{symptom}{cal}{photos}{illus}{notes}"
+        f"{symptom}{parts}{cal}{photos}{illus}{notes}"
         "</body></html>"
     )

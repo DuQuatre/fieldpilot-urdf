@@ -13,24 +13,35 @@ real call, fully offline and deterministic:
     6. Recommend    recommend_solution — the best-proven fix for this fault            (1.18)
     7. Record       save_case — so the next diagnosis starts smarter                   (1.18)
     8. Show         3D fault-motion + oscilloscope traces (optional [viz] extra)        (1.19/1.20)
+    9. Report       photos + illustrations + spare parts -> French HTML report          (1.22/1.23)
 
-    pip install fieldpilot-urdf            # steps 1–7 (core)
-    pip install "fieldpilot-urdf[viz]"     # + step 8 visuals
+    pip install fieldpilot-urdf            # steps 1–7, 9 (core)
+    pip install "fieldpilot-urdf[viz]"     # + step 8 visuals & report illustrations
     python examples/diagnostics_workflow.py
 """
 from __future__ import annotations
 
+import base64
 import math
 from pathlib import Path
 from typing import Optional
 
 from fieldpilot_urdf import (
-    DiagnosticCase, Joint, JointLimit, Link, Origin, PoseObservation,
-    Question, Robot, calibrate_joint_offsets, candidates_from_scores, fault_priors,
-    forward_kinematics, list_cases, load_cases, localize_joint_fault,
-    next_question, recommend_solution, save_case, update_beliefs,
+    DiagnosticCase, DiagnosticReport, Joint, JointLimit, Link, Origin, PoseObservation,
+    Question, Robot, SparePart, build_simulation_illustrations, calibrate_joint_offsets,
+    candidates_from_scores, fault_priors, forward_kinematics, list_cases, load_cases,
+    localize_joint_fault, next_question, photo_requests, recommend_solution,
+    render_report_html, save_case, update_beliefs,
 )
 from fieldpilot_urdf.fk import R_to_rpy
+
+# Which spare parts each fix needs (in production: the SPA spare-parts catalogue).
+SPARES: dict[str, list[SparePart]] = {
+    "recalibrate_encoder": [
+        SparePart(reference="ENC-1024", name="Codeur incrémental 1024 ppr"),
+        SparePart(reference="CAL-KIT", name="Kit d'étalonnage articulaire"),
+    ],
+}
 
 TRUE_FAULT = "j_shoulder"      # the joint we secretly miscalibrate
 TRUE_OFFSET = 0.05            # rad it is off by (the robot's reality vs the model)
@@ -183,7 +194,33 @@ def main(out_dir: Optional[Path] = None) -> dict:
 
     # 8. Visuals (optional): 3D fault-motion + oscilloscope traces.
     banner("8. SHOW — 3D motion + scope traces (optional [viz] extra)")
-    visuals = _render_visuals(robot, commanded, out_dir)
+    illustrations = _build_illustrations(robot, out_dir)
+
+    # 9. Report: ask the tech for photos, attach the illustrations (confirmed),
+    #    list the spare parts, and render the French HTML report for HTML->PDF.
+    banner("9. REPORT — assemble the field report")
+    symptom_fr = f"dérive de l'outil de {drift * 1000:.0f} mm"
+    print("  ask the technician for:")
+    for req in photo_requests(joints=[resolved_fault], symptom=symptom_fr):
+        print(f"    • {req}")
+    report = DiagnosticReport(
+        reference="INT-2026-0042", machine="diag_arm",
+        symptom=symptom_fr,
+        confirmed=True, fault=resolved_fault, confidence=state.leading_prob,
+        solution=fix, spare_parts=SPARES.get(fix, []),
+        calibration={resolved_fault: round(cal.offsets.get(resolved_fault, 0.0), 4)},
+        illustrations=illustrations,
+    )
+    html = render_report_html(report)
+    report_path = None
+    if out_dir is not None:
+        out_dir.mkdir(parents=True, exist_ok=True)
+        report_path = out_dir / "rapport.html"
+        report_path.write_text(html, encoding="utf-8")
+        print(f"  wrote {report_path} ({len(html)} chars, "
+              f"{len(report.spare_parts)} spare part(s), {len(illustrations)} illustration(s))")
+    else:
+        print(f"  rendered report HTML ({len(html)} chars) — pass out_dir to save")
 
     print("\n" + "=" * 74)
     print(f"  Diagnosed {resolved_fault} (offset {cal.offsets.get(resolved_fault, 0):+.3f} rad), "
@@ -194,41 +231,37 @@ def main(out_dir: Optional[Path] = None) -> dict:
         "resolved_fault": resolved_fault,
         "calibrated_offset": cal.offsets.get(resolved_fault),
         "recommended": fix,
-        "visuals": visuals,
+        "report_html": html,
+        "report_path": str(report_path) if report_path else None,
     }
 
 
-def _render_visuals(robot: Robot, commanded: dict, out_dir: Optional[Path]) -> dict:
-    try:
-        from fieldpilot_urdf.viz import render_motion_comparison, render_trajectory_scope
-        from fieldpilot_urdf.retime import TimedTrajectory
-    except Exception:
-        print("  [skipped] visuals need:  pip install 'fieldpilot-urdf[viz]'")
-        return {}
+def _build_illustrations(robot: Robot, out_dir: Optional[Path]) -> list:
+    """Render the simulation illustrations (3D motion + scope) as ReportImages,
+    and write them to out_dir. Returns [] without the [viz] extra."""
+    from fieldpilot_urdf.retime import TimedTrajectory
 
-    # A shoulder sweep, nominal vs the faulted (offset) motion.
     sweep = [{"j_base": 0.4, "j_shoulder": -0.6 + 0.25 * k, "j_elbow": 0.8} for k in range(6)]
     faulted = [{**q, "j_shoulder": q["j_shoulder"] + TRUE_OFFSET} for q in sweep]
     times = [0.3 * k for k in range(len(sweep))]
     expected = TimedTrajectory(joint_ids=["j_shoulder"], times=times,
-                               q=[[q["j_shoulder"]] for q in sweep],
-                               u=[[0.0] for _ in sweep])
+                               q=[[q["j_shoulder"]] for q in sweep], u=[[0.0]] * len(sweep))
     measured = TimedTrajectory(joint_ids=["j_shoulder"], times=times,
-                               q=[[q["j_shoulder"]] for q in faulted],
-                               u=[[0.0] for _ in faulted])
-
-    gif = render_motion_comparison(robot, sweep, faulted, track_link="tool",
-                                   labels=("nominal", "faulted"), layout="overlay")
-    png = render_trajectory_scope(expected, measured, signals=("position",),
-                                  labels=("expected", "measured"))
-    if out_dir is None:
-        print(f"  rendered 3D GIF ({len(gif)} B) + scope PNG ({len(png)} B) — pass out_dir to save")
-        return {"gif_bytes": len(gif), "png_bytes": len(png)}
-    out_dir.mkdir(parents=True, exist_ok=True)
-    (out_dir / "fault_motion.gif").write_bytes(gif)
-    (out_dir / "scope.png").write_bytes(png)
-    print(f"  wrote {out_dir / 'fault_motion.gif'} and {out_dir / 'scope.png'}")
-    return {"gif": str(out_dir / "fault_motion.gif"), "png": str(out_dir / "scope.png")}
+                               q=[[q["j_shoulder"]] for q in faulted], u=[[0.0]] * len(faulted))
+    try:
+        imgs = build_simulation_illustrations(robot, sweep, faulted, expected=expected,
+                                              observed=measured, track_link="tool")
+    except RuntimeError:
+        print("  [skipped] visuals need:  pip install 'fieldpilot-urdf[viz]'")
+        return []
+    if out_dir is not None:
+        out_dir.mkdir(parents=True, exist_ok=True)
+        for img in imgs:
+            (out_dir / img.name).write_bytes(base64.b64decode(img.data_b64))
+        print(f"  wrote { [str(out_dir / i.name) for i in imgs] }")
+    else:
+        print(f"  rendered { [i.name for i in imgs] }")
+    return imgs
 
 
 if __name__ == "__main__":

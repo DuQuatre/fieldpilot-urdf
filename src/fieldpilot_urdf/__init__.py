@@ -73,7 +73,7 @@ from .case_base import (
     load_case, load_cases, recommend_solution, save_case, solution_stats,
 )
 from .report import (
-    DiagnosticReport, ReportImage, attach_simulation_illustrations,
+    DiagnosticReport, ReportImage, SparePart, attach_simulation_illustrations,
     build_simulation_illustrations, photo_requests, render_report_html,
 )
 
@@ -112,6 +112,6 @@ __all__ = [
     "rank_questions", "next_question", "update_beliefs", "candidates_from_scores",
     "DiagnosticCase", "SolutionStat", "save_case", "load_case", "load_cases",
     "list_cases", "delete_case", "fault_priors", "solution_stats", "recommend_solution",
-    "DiagnosticReport", "ReportImage", "photo_requests", "render_report_html",
+    "DiagnosticReport", "ReportImage", "SparePart", "photo_requests", "render_report_html",
     "build_simulation_illustrations", "attach_simulation_illustrations",
 ]

@@ -6,6 +6,22 @@ to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Added
+- **Spare parts on the report.** `DiagnosticReport` gains a `spare_parts` list of
+  the new `SparePart` model (`reference`, `name`, `quantity`); `render_report_html`
+  renders them as a French "Pièces de rechange" table.
+- **Illustrated diagnostics guide — `docs/diagnostics-guide.md`** with generated
+  figures (`docs/generate_illustrations.py` → `docs/images/`): one worked
+  scenario walked end to end with the 3D fault-motion GIF, the oscilloscope
+  divergence trace, and a belief-narrowing plot, plus the dialog transcript,
+  spare-parts list, and field interactions (photo requests + report).
+
+### Changed
+- **`examples/diagnostics_workflow.py` now assembles the report** (step 9): it
+  asks the tech for photos (`photo_requests`), attaches the simulation
+  illustrations (confirmed), lists the spare parts for the fix, and writes the
+  French `rapport.html` — tying the report module into the end-to-end example.
+
 ## [1.22.0] — 2026-06-18
 
 Adds **diagnostic report assembly**. `fieldpilot_urdf.report` bundles a diagnosis,
