@@ -201,6 +201,18 @@ stats.model_dump()
 The same `fault_priors` that this history produces also primes the dialog at the
 top of the loop — so the dashboard and the diagnosis share one growing memory.
 
+A **weekly email digest** pushes the same KPIs to managers — `weekly_digest`
+renders the summary into a French email (subject + HTML + text), with
+week-over-week deltas when you pass last week's summary:
+
+```python
+from fieldpilot_urdf import weekly_digest
+
+digest = weekly_digest(this_week, previous=last_week, period_label="semaine du 16/06/2026")
+print(digest.subject)   # "Bilan diagnostic — semaine du 16/06/2026 : 5 intervention(s), 80 % résolues"
+send_email(html=digest.html_body, text=digest.text_body)   # n8n / SMTP does the send
+```
+
 ---
 
 ## Run it yourself

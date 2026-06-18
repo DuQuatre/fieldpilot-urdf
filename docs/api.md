@@ -149,6 +149,11 @@ the diagnostic case base into a JSON-serializable KPI block for the admin / MRR
 dashboard — totals, resolution rate, top faults by frequency, best-performing
 fixes)
 
+**Weekly email digest** — `weekly_digest`, `EmailDigest` (render a
+`CaseStatsSummary` into a French email — subject + HTML + plain-text — with
+week-over-week deltas when last period's summary is supplied; the package builds
+the content, n8n sends it)
+
 **Hypothesis-test** — `diagnose`, `Symptom`, `Hypothesis`, `Verdict`,
 `DiagnoseReport`
 
