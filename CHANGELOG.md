@@ -6,6 +6,26 @@ to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Added
+- **Diagnostic case knowledge base — `fieldpilot_urdf.case_base`.** Remember
+  every resolved diagnosis (symptom, questions/answers, the confirmed fault, the
+  fix that worked) and turn the history into statistics that sharpen future
+  diagnoses. Two halves:
+  - **Persistence** — `save_case` / `load_case` / `load_cases` / `list_cases` /
+    `delete_case` store one `DiagnosticCase` JSON per case under a directory
+    (the `FIELDPILOT_URDF_CASE_DIR` env var, default `/data/diagnostic-cases`, or
+    an explicit `root=`).
+  - **Aggregation** (pure functions over a `list[DiagnosticCase]`) —
+    `fault_priors` returns the empirical fault frequencies as a normalized,
+    Laplace-smoothed prior (optionally per `machine`, or forced over a given
+    candidate set); `solution_stats` ranks each `(fault, solution)` pair by its
+    success record (`attempts` / `successes` / `success_rate`); and
+    `recommend_solution` picks the best-proven fix for a fault.
+  - **The payoff:** `fault_priors` drops straight into
+    `differential_diagnosis.candidates_from_scores`, so the dialog engine starts
+    each new case from what the fleet has actually shown — it gets sharper the
+    more it's used. Pure Python, core install.
+
 ## [1.17.0] — 2026-06-18
 
 Opens an **interactive** diagnostics direction. When several faults could explain
