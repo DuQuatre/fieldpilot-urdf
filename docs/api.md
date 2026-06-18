@@ -97,7 +97,11 @@ feeds `check_trajectory` and the result mirrors `simulate.Trajectory`)
 ### Layer 4 — Diagnostics
 
 **Localise** — `rank_root_causes`, `RootCauseCandidate`, `affected_links`,
-`criticality`
+`criticality` (structural: downstream-link overlap)
+
+**Localise (kinematic)** — `localize_joint_fault`, `JointFaultCandidate` (given a
+link's observed vs. commanded pose, rank the chain's joints by how well a single
+calibration offset on each explains the deviation, via the geometric Jacobian)
 
 **Hypothesis-test** — `diagnose`, `Symptom`, `Hypothesis`, `Verdict`,
 `DiagnoseReport`

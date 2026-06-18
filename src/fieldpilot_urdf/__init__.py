@@ -60,6 +60,7 @@ from .retime import TimedTrajectory, time_parameterize
 from .fault_propagation import (
     RootCauseCandidate, affected_links, criticality, rank_root_causes,
 )
+from .kinematic_diagnosis import JointFaultCandidate, localize_joint_fault
 
 __all__ = [
     "__version__",
@@ -90,4 +91,5 @@ __all__ = [
     "import_urdf_file", "infer_package_root", "package_uri_parts", "resolve_includes",
     "resolve_includes_local", "substitute_find",
     "RootCauseCandidate", "affected_links", "criticality", "rank_root_causes",
+    "localize_joint_fault", "JointFaultCandidate",
 ]

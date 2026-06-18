@@ -209,6 +209,19 @@ ranked = rank_root_causes(robot, ["wrist_3_link", "tool0"])
 print(ranked[0].target, round(ranked[0].score, 3))   # suspect joint, precision×recall score
 ```
 
+Or localise **kinematically** — the tool measured *off* where the model says it
+should be. Which joint is miscalibrated, and by how much? Ranked via the
+geometric Jacobian:
+
+```python
+from fieldpilot_urdf import localize_joint_fault
+
+# commanded q, but the tool was measured at observed_xyz (optionally + observed_rpy)
+cands = localize_joint_fault(robot, "tool0", commanded_q, observed_xyz=(0.41, 0.10, 0.52))
+print(cands[0].joint, round(cands[0].estimated_offset, 4), round(cands[0].explained_fraction, 2))
+# -> e.g. 'wrist_2_joint' 0.03 0.99   (a 0.03 rad miscalibration explains 99% of the deviation)
+```
+
 Then **prove it** — inject the hypothesis on a copy, re-test, and confirm or
 refute. The ranked suspect feeds straight into `diagnose` as the hypothesis:
 

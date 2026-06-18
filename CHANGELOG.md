@@ -6,6 +6,24 @@ to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Added
+- **Kinematic fault localization — `localize_joint_fault`.** New
+  `fieldpilot_urdf.kinematic_diagnosis` module: the first diagnostics tool that
+  reasons *geometrically* rather than structurally. Given a link's commanded
+  configuration and its *observed* pose (the tool isn't where the model says),
+  it ranks the chain's joints by how well a single calibration offset on each
+  explains the deviation — using the 1.10 geometric Jacobian. A small offset
+  `δqⱼ` shifts the pose by the twist `J[:, j]·δqⱼ`; the best single-joint
+  explanation is the least-squares projection of the observed deviation twist
+  onto each Jacobian column. Returns a ranked `list[JointFaultCandidate]`
+  (`joint`, `estimated_offset` in rad/m, `explained_fraction` ∈ [0, 1],
+  `residual_position`, `residual_orientation`), best-first. Pass only
+  `observed_xyz` for a position-only fit (orientation excluded from the fit),
+  or add `observed_rpy` for full pose; `orientation_weight` balances the mixed
+  metre/radian metric, `min_explained` / `max_candidates` filter the list. It is
+  a linearization — exact for small offsets, with `explained_fraction` flagging
+  when a single-joint story no longer fits. Pure NumPy.
+
 ## [1.13.0] — 2026-06-18
 
 Adds **environment collision**. Until now every collision query was
