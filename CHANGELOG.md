@@ -6,6 +6,15 @@ to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [1.27.0] — 2026-06-18
+
+Wires the diagnostic case statistics into the **admin / MRR dashboard**. The new
+`fieldpilot_urdf.dashboard` module rolls the case base up into a
+JSON-serializable KPI block (totals, resolution rate, top faults, best-performing
+fixes) the dashboard serves beside the revenue numbers — pure data, so the open
+core stays free of the dashboard/web layer. No breaking changes; additive over
+the 1.26 public API. 449 tests.
+
 ### Added
 - **Dashboard KPIs from the case base — `fieldpilot_urdf.dashboard`.** Rolls the
   diagnostic case base up into the headline numbers for the admin / MRR
@@ -895,6 +904,7 @@ standalone, pure-Python, pip-installable package (AGPL-3.0).
   spare-parts BOM, and multi-tenant hosting are **not** part of this package —
   they live in FieldPilot SaaS.
 
+[1.27.0]: https://github.com/DuQuatre/fieldpilot-urdf/releases/tag/v1.27.0
 [1.26.0]: https://github.com/DuQuatre/fieldpilot-urdf/releases/tag/v1.26.0
 [1.25.0]: https://github.com/DuQuatre/fieldpilot-urdf/releases/tag/v1.25.0
 [1.24.0]: https://github.com/DuQuatre/fieldpilot-urdf/releases/tag/v1.24.0
