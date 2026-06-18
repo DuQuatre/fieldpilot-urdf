@@ -179,6 +179,30 @@ todo = unresolved_part_refs(report.spare_parts, {"ENC-1024": 1001})   # ['CAL-KI
 
 ---
 
+## Case stats on the admin dashboard
+
+Every resolved case feeds the fleet's statistics. `case_stats_summary` rolls the
+case base into a KPI block the admin / MRR dashboard serves beside the revenue
+numbers — totals, resolution rate, the faults that dominate, and the fixes that
+work:
+
+```python
+from fieldpilot_urdf import case_stats_summary, load_cases
+
+stats = case_stats_summary(load_cases())
+stats.model_dump()
+#  -> {'total_cases': 142, 'resolved_cases': 128, 'resolution_rate': 0.90,
+#      'distinct_faults': 9,
+#      'top_faults': [{'fault': 'j_shoulder', 'count': 41, 'share': 0.29}, …],
+#      'top_solutions': [{'fault': 'j_shoulder', 'solution': 'recalibrate_encoder',
+#                         'attempts': 38, 'successes': 36, 'success_rate': 0.95}, …]}
+```
+
+The same `fault_priors` that this history produces also primes the dialog at the
+top of the loop — so the dashboard and the diagnosis share one growing memory.
+
+---
+
 ## Run it yourself
 
 ```bash

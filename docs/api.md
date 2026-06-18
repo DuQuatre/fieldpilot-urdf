@@ -144,6 +144,11 @@ spare parts — a line per part, matched to products via a `{reference: product_
 map, linked to the intervention by `origin`; unmapped refs flagged for product
 creation)
 
+**Dashboard KPIs** — `case_stats_summary`, `CaseStatsSummary`, `FaultStat` (roll
+the diagnostic case base into a JSON-serializable KPI block for the admin / MRR
+dashboard — totals, resolution rate, top faults by frequency, best-performing
+fixes)
+
 **Hypothesis-test** — `diagnose`, `Symptom`, `Hypothesis`, `Verdict`,
 `DiagnoseReport`
 

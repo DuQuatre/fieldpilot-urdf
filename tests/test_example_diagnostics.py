@@ -52,10 +52,14 @@ def test_diagnostics_workflow_runs_end_to_end(tmp_path, capsys):
     assert result["spa_order_lines"] == 2
     assert result["spa_unresolved"] == ["CAL-KIT"]
 
+    # it rolled the case base into dashboard KPIs (5 cases; shoulder dominates)
+    assert result["dashboard_total_cases"] == 5
+    assert result["dashboard_top_fault"] == mod.TRUE_FAULT
+
     # it printed the full narrative
     out = capsys.readouterr().out
     assert "LOCALISE" in out and "DIALOG" in out and "REPORT" in out
-    assert "SYNC" in out and "NOTIFY" in out and "ORDER" in out
+    assert "SYNC" in out and "NOTIFY" in out and "ORDER" in out and "DASHBOARD" in out
 
 
 @pytest.mark.skipif(importlib.util.find_spec("matplotlib") is None,

@@ -6,6 +6,17 @@ to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Added
+- **Dashboard KPIs from the case base — `fieldpilot_urdf.dashboard`.** Rolls the
+  diagnostic case base up into the headline numbers for the admin / MRR
+  dashboard. `case_stats_summary(cases, machine=…, top_n=…)` returns a
+  JSON-serializable `CaseStatsSummary` — `total_cases`, `resolved_cases`,
+  `resolution_rate`, `distinct_faults`, the `top_faults` by frequency (with each
+  fault's share, as `FaultStat`), and the `top_solutions` (best-performing fixes,
+  reusing `case_base.solution_stats`). The package builds the data; the FastAPI
+  dashboard serves it. The example gains a step 13 DASHBOARD; the guide gains a
+  "Case stats on the admin dashboard" section. Pure Python.
+
 ## [1.26.0] — 2026-06-18
 
 Wires the diagnosis's spare parts into the **SPA module's Odoo order**. The new
