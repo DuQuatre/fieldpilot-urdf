@@ -83,6 +83,9 @@ from .intervention import (
 from .telegram import (
     TelegramAttachment, TelegramRequest, report_summary_text, telegram_messages,
 )
+from .spare_parts import (
+    spare_parts_order_lines, spare_parts_order_vals, unresolved_part_refs,
+)
 
 __all__ = [
     "__version__",
@@ -124,4 +127,5 @@ __all__ = [
     "GotenbergRequest", "gotenberg_request", "intervention_attachment_vals",
     "intervention_task_vals",
     "TelegramRequest", "TelegramAttachment", "report_summary_text", "telegram_messages",
+    "spare_parts_order_vals", "spare_parts_order_lines", "unresolved_part_refs",
 ]

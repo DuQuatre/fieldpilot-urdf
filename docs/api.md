@@ -138,6 +138,12 @@ the report PDF on the intervention — pure data, the SaaS does the I/O)
 the French summary plus the illustrations — 3D GIF as `sendAnimation`, scope PNG
 as `sendPhoto` — and the PDF as `sendDocument`; pure data, n8n POSTs it)
 
+**SPA spare-parts order** — `spare_parts_order_vals`, `spare_parts_order_lines`,
+`unresolved_part_refs` (build the Odoo `sale.order` create-values for a report's
+spare parts — a line per part, matched to products via a `{reference: product_id}`
+map, linked to the intervention by `origin`; unmapped refs flagged for product
+creation)
+
 **Hypothesis-test** — `diagnose`, `Symptom`, `Hypothesis`, `Verdict`,
 `DiagnoseReport`
 

@@ -16,8 +16,9 @@ real call, fully offline and deterministic:
     9. Report       photos + illustrations + spare parts -> French HTML report          (1.22/1.23)
    10. Sync         report -> Gotenberg PDF request + Odoo project.task payload          (1.24)
    11. Notify       report -> Telegram bot replies to the technician                     (1.25)
+   12. Order        spare parts -> Odoo SPA sale.order payload                            (1.26)
 
-    pip install fieldpilot-urdf            # steps 1–7, 9, 10, 11 (core)
+    pip install fieldpilot-urdf            # steps 1–7, 9–12 (core)
     pip install "fieldpilot-urdf[viz]"     # + step 8 visuals & report illustrations
     python examples/diagnostics_workflow.py
 """
@@ -34,7 +35,8 @@ from fieldpilot_urdf import (
     candidates_from_scores, fault_priors, forward_kinematics, gotenberg_request,
     intervention_task_vals, list_cases, load_cases, localize_joint_fault,
     next_question, photo_requests, recommend_solution, render_report_html,
-    report_summary_text, save_case, telegram_messages, update_beliefs,
+    report_summary_text, save_case, spare_parts_order_vals, telegram_messages,
+    unresolved_part_refs, update_beliefs,
 )
 from fieldpilot_urdf.fk import R_to_rpy
 
@@ -241,6 +243,15 @@ def main(out_dir: Optional[Path] = None) -> dict:
         print(f"  {m.method}{extra}")
     print(f"  summary:\n    " + report_summary_text(report, parse_mode="").replace("\n", "\n    "))
 
+    # 12. Order: the spare parts become an Odoo SPA sale.order.
+    banner("12. ORDER — spare parts -> Odoo SPA sale.order")
+    product_map = {"ENC-1024": 1001}            # what the SPA catalogue already knows
+    order = spare_parts_order_vals(report, partner_id=42, product_map=product_map)
+    missing = unresolved_part_refs(report.spare_parts, product_map)
+    print(f"  Odoo sale.order: partner {order['partner_id']}, origin {order['origin']}, "
+          f"{len(order['order_line'])} line(s)")
+    print(f"  parts needing a product in Odoo first: {missing}")
+
     print("\n" + "=" * 74)
     print(f"  Diagnosed {resolved_fault} (offset {cal.offsets.get(resolved_fault, 0):+.3f} rad), "
           f"fix: {fix}.")
@@ -255,6 +266,8 @@ def main(out_dir: Optional[Path] = None) -> dict:
         "odoo_task_vals": task_vals,
         "gotenberg_filename": gb.output_filename,
         "telegram_methods": [m.method for m in tg],
+        "spa_order_lines": len(order["order_line"]),
+        "spa_unresolved": missing,
     }
 
 

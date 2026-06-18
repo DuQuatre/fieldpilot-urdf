@@ -48,10 +48,14 @@ def test_diagnostics_workflow_runs_end_to_end(tmp_path, capsys):
     # it built the Telegram replies (summary first, then the illustrations)
     assert result["telegram_methods"][0] == "sendMessage"
 
+    # it built the SPA spare-parts order (2 lines; CAL-KIT has no product yet)
+    assert result["spa_order_lines"] == 2
+    assert result["spa_unresolved"] == ["CAL-KIT"]
+
     # it printed the full narrative
     out = capsys.readouterr().out
     assert "LOCALISE" in out and "DIALOG" in out and "REPORT" in out
-    assert "SYNC" in out and "NOTIFY" in out
+    assert "SYNC" in out and "NOTIFY" in out and "ORDER" in out
 
 
 @pytest.mark.skipif(importlib.util.find_spec("matplotlib") is None,
