@@ -101,6 +101,17 @@ res = plan_path(robot, start, goal, obstacles=[wall])    # RRT-Connect, obstacle
 print(res.success, res.n_waypoints)                      # detours around the wall
 ```
 
+Plain `solve_ik` ignores collision — `solve_ik_collision_free` picks the IK
+*branch* (elbow-up / elbow-down …) that's actually usable: self-collision-free
+and clear of the obstacles, so it feeds straight in as a `plan_path` endpoint.
+
+```python
+from fieldpilot_urdf import solve_ik_collision_free
+
+ik = solve_ik_collision_free(robot, "tool0", target_xyz=(0.5, 0.0, 0.4), obstacles=[wall])
+print(ik.converged, ik.message)          # converged == a collision-free posture was found
+```
+
 **Velocity kinematics** sits between FK and IK: the geometric Jacobian maps joint
 velocities to the end-effector twist, and from it you read off dexterity and
 proximity to a singularity.

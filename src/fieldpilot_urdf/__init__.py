@@ -36,7 +36,7 @@ from .repair import Patch, REPAIRS, UNFIXABLE_CODES, repair
 from .storage import (
     delete_robot, list_robots, load_meta, load_resolver, load_robot, save_robot,
 )
-from .ik import IKResult, solve_ik, solve_ik_multi
+from .ik import IKResult, solve_ik, solve_ik_collision_free, solve_ik_multi
 from .kinematics import (
     SingularityReport, geometric_jacobian, jacobian_joints,
     joint_velocity_to_twist, manipulability, singularity_report,
@@ -87,7 +87,7 @@ __all__ = [
     "PlanResult", "plan_path", "shorten_path", "path_length",
     "plan_cartesian_path", "CartesianPlanResult", "interpolate_pose", "pose_error",
     "time_parameterize", "TimedTrajectory",
-    "IKResult", "solve_ik", "solve_ik_multi",
+    "IKResult", "solve_ik", "solve_ik_multi", "solve_ik_collision_free",
     "geometric_jacobian", "jacobian_joints", "joint_velocity_to_twist",
     "manipulability", "singularity_report", "SingularityReport",
     "expand_xacro", "expand_xacro_local", "fetch_meshes", "fetch_urdf", "import_urdf",

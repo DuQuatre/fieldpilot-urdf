@@ -18,6 +18,9 @@ import numpy as np
 from pydantic import BaseModel
 from scipy.optimize import least_squares
 
+from .collisions import (
+    MeshResolver, Obstacle, detect_obstacle_collisions, detect_self_collisions,
+)
 from .fk import forward_kinematics, rpy_to_R
 from .models import Joint, Robot
 
@@ -297,3 +300,76 @@ def solve_ik_multi(
         if max_solutions is not None and len(distinct) >= max_solutions:
             break
     return distinct
+
+
+def _is_collision_free(
+    robot: Robot,
+    q: dict[str, float],
+    obstacles: Optional[list[Obstacle]],
+    mesh_resolver: Optional[MeshResolver],
+    ignore_adjacent: bool,
+) -> bool:
+    """True if config ``q`` neither self-collides nor hits any obstacle."""
+    if detect_self_collisions(robot, q=q, ignore_adjacent=ignore_adjacent,
+                              mesh_resolver=mesh_resolver):
+        return False
+    if obstacles and detect_obstacle_collisions(
+            robot, obstacles, q=q, mesh_resolver=mesh_resolver):
+        return False
+    return True
+
+
+def solve_ik_collision_free(
+    robot: Robot,
+    target_link: str,
+    target_xyz: tuple[float, float, float],
+    target_rpy: Optional[tuple[float, float, float]] = None,
+    *,
+    obstacles: Optional[list[Obstacle]] = None,
+    mesh_resolver: Optional[MeshResolver] = None,
+    n_restarts: int = 24,
+    seed: Optional[int] = None,
+    max_nfev: int = 200,
+    tol: float = 1e-4,
+    ignore_adjacent: bool = True,
+) -> IKResult:
+    """Solve IK to a pose, returning a solution that is also **collision-free**.
+
+    Plain :func:`solve_ik` happily returns a pose-reaching configuration that
+    self-collides or sits inside an obstacle — useless as, say, a planning
+    endpoint. This enumerates the *distinct* IK branches (via
+    :func:`solve_ik_multi` — elbow-up / elbow-down and other postures that reach
+    the same pose) and returns the best one that neither self-collides nor hits
+    any of ``obstacles``. Different postures collide differently, so this picks
+    the one that's clear.
+
+    Returns an :class:`IKResult`. ``converged=True`` means a **collision-free**
+    pose-reaching solution was found. If the pose is reachable only in collision,
+    the best-by-error colliding configuration is returned with ``converged=False``
+    and a message saying so; if no branch reaches the pose at all, an empty,
+    non-converged result is returned. ``obstacles`` / ``mesh_resolver`` /
+    ``ignore_adjacent`` mirror the collision API; the solver knobs mirror
+    :func:`solve_ik_multi`.
+    """
+    candidates = solve_ik_multi(
+        robot, target_link, target_xyz, target_rpy,
+        n_restarts=n_restarts, seed=seed, max_nfev=max_nfev, tol=tol,
+        require_converged=True,
+    )
+    for res in candidates:                       # best-first
+        if _is_collision_free(robot, res.q, obstacles, mesh_resolver, ignore_adjacent):
+            return res.model_copy(update={
+                "message": res.message + "; collision-free"})
+
+    if candidates:
+        best = candidates[0]
+        return best.model_copy(update={
+            "converged": False,
+            "message": (f"reached the pose in {len(candidates)} distinct "
+                        "configuration(s), all in collision"),
+        })
+    return IKResult(
+        q={}, position_error=float("inf"), orientation_error=float("inf"),
+        converged=False, n_iter=0,
+        message="no IK solution converged for the target pose",
+    )

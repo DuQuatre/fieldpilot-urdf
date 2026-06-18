@@ -48,10 +48,11 @@ local filesystem, with `package://` resolved via a `package_roots` map), plus
 **Forward kinematics** — `forward_kinematics`, and the transform helpers
 `joint_motion`, `origin_to_T`, `rotation_around_axis`, `rpy_to_R`, `R_to_rpy`
 
-**Inverse kinematics** — `solve_ik`, `solve_ik_multi`, `IKResult`
-(`solve_ik` takes `n_restarts`/`seed` for random-restart robustness on hard
-targets; `solve_ik_multi` returns multiple *distinct* solutions, e.g. elbow-up /
-elbow-down)
+**Inverse kinematics** — `solve_ik`, `solve_ik_multi`, `solve_ik_collision_free`,
+`IKResult` (`solve_ik` takes `n_restarts`/`seed` for random-restart robustness on
+hard targets; `solve_ik_multi` returns multiple *distinct* solutions, e.g.
+elbow-up / elbow-down; `solve_ik_collision_free` returns the distinct branch that
+is self-collision-free and clear of `obstacles` — a usable planning endpoint)
 
 **Velocity kinematics** — `geometric_jacobian`, `jacobian_joints`,
 `joint_velocity_to_twist`, `manipulability`, `singularity_report`,
