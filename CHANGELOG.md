@@ -6,6 +6,16 @@ to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [1.13.0] — 2026-06-18
+
+Adds **environment collision**. Until now every collision query was
+*self*-collision — the robot could be planned against itself but never the
+world. World-frame `Obstacle`s and `detect_obstacle_collisions` close that gap,
+and `plan_path` / `shorten_path` / `check_trajectory` gain an `obstacles=`
+argument so the RRT-Connect planner routes around them. Reuses the existing
+AABB collision model. No breaking changes; `obstacles=None` reproduces prior
+behaviour byte-for-byte. Additive over the 1.12 public API. 345 tests.
+
 ### Added
 - **Environment collision + obstacle-aware planning.** Until now all collision
   checking was *self*-collision; the robot could be planned only against itself,
@@ -541,6 +551,7 @@ standalone, pure-Python, pip-installable package (AGPL-3.0).
   spare-parts BOM, and multi-tenant hosting are **not** part of this package —
   they live in FieldPilot SaaS.
 
+[1.13.0]: https://github.com/DuQuatre/fieldpilot-urdf/releases/tag/v1.13.0
 [1.12.0]: https://github.com/DuQuatre/fieldpilot-urdf/releases/tag/v1.12.0
 [1.11.0]: https://github.com/DuQuatre/fieldpilot-urdf/releases/tag/v1.11.0
 [1.10.0]: https://github.com/DuQuatre/fieldpilot-urdf/releases/tag/v1.10.0
