@@ -297,6 +297,17 @@ report = diagnose(
 print(report.verdict, "—", report.summary)   # CONFIRMED / REFUTED / INCONCLUSIVE
 ```
 
+Then **show the tech** — animate the simulated faulted motion against the
+nominal one so reality can be compared to the model (needs the `[viz]` extra):
+
+```python
+from fieldpilot_urdf.viz import render_motion_comparison
+
+gif = render_motion_comparison(robot, nominal_path, faulted_path,
+                               layout="overlay", track_link="tool0")  # 3D GIF bytes
+open("fault.gif", "wb").write(gif)   # nominal solid / faulted dashed, divergence marked
+```
+
 *(The natural-language front-end that turns a free-text or voice symptom into
 these hypotheses via an LLM is part of [FieldPilot](https://github.com/DuQuatre)
 SaaS. The reasoning core above stays local and deterministic.)*

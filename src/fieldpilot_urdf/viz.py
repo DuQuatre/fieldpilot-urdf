@@ -33,14 +33,21 @@ import matplotlib
 matplotlib.use("Agg")  # headless backend; safe under uvicorn / pytest
 import matplotlib.pyplot as plt  # noqa: E402
 
+import numpy as np  # noqa: E402
+
 from .fk import forward_kinematics
-from .graph import build_graph
+from .graph import build_graph, leaf_links
 from .importer import package_uri_parts
 from .loader import to_xml
 from .models import Mesh, Robot
 
 
 Format = Literal["png", "svg"]
+MotionFormat = Literal["gif", "frames"]
+
+NOMINAL_COLOR = "#2E86DE"   # healthy / commanded motion
+FAULT_COLOR = "#E74C3C"     # faulted / observed motion
+TRACE_COLOR = "#F39C12"     # end-effector path trail
 
 
 # Joint type → edge style (color + dash)
@@ -176,6 +183,192 @@ def render_pose_3d(
     fig.savefig(buf, format=fmt, bbox_inches="tight", dpi=110)
     plt.close(fig)
     return buf.getvalue()
+
+
+# --- motion animation (3D fault-motion video) ------------------------------
+#
+# Animate a robot through a sequence of joint configurations (a "trajectory" =
+# list of {joint: value} dicts, e.g. plan_path output, TimedTrajectory.as_dicts(),
+# or a sim trajectory). render_motion_comparison plays a nominal motion against a
+# faulted one so a tech can eyeball "does my robot move like this?". Mesh-free
+# stick figures, same as render_pose_3d. GIF assembly uses Pillow (a matplotlib
+# dependency, so always present under the [viz] extra); fmt="frames" needs only
+# matplotlib and returns the per-frame PNGs.
+
+
+def _frame_transforms(robot: Robot, frames: list[dict]) -> list[dict]:
+    if not frames:
+        raise ValueError("no frames to animate (empty trajectory)")
+    return [forward_kinematics(robot, q or {}) for q in frames]
+
+
+def _global_limits(tfs_lists: list[list[dict]]):
+    """Camera box enclosing every link across every frame of every trajectory,
+    so the view doesn't jump frame to frame."""
+    xs, ys, zs = [], [], []
+    for tfs_list in tfs_lists:
+        for tfs in tfs_list:
+            for T in tfs.values():
+                xs.append(float(T[0, 3])); ys.append(float(T[1, 3])); zs.append(float(T[2, 3]))
+    span = max(max(xs) - min(xs), max(ys) - min(ys), max(zs) - min(zs), 1e-3)
+    return ((min(xs) + max(xs)) / 2, (min(ys) + max(ys)) / 2, (min(zs) + max(zs)) / 2, span)
+
+
+def _apply_limits(ax, lim) -> None:
+    cx, cy, cz, span = lim
+    ax.set_xlim(cx - span / 2, cx + span / 2)
+    ax.set_ylim(cy - span / 2, cy + span / 2)
+    ax.set_zlim(cz - span / 2, cz + span / 2)
+    ax.set_xlabel("x"); ax.set_ylabel("y"); ax.set_zlabel("z")
+
+
+def _draw_skeleton(ax, robot: Robot, tfs: dict, *, edge_color: Optional[str] = None,
+                   node_color: str = "#3498DB", style: str = "solid",
+                   alpha: float = 1.0, label: Optional[str] = None) -> None:
+    """Scatter link origins + parent→child segments into a 3D axes. With
+    ``edge_color=None`` segments are coloured by joint type (like
+    ``render_pose_3d``); set it to draw the whole robot in one colour."""
+    xs = [float(T[0, 3]) for T in tfs.values()]
+    ys = [float(T[1, 3]) for T in tfs.values()]
+    zs = [float(T[2, 3]) for T in tfs.values()]
+    ax.scatter(xs, ys, zs, c=node_color, s=40, alpha=alpha, depthshade=True)
+    first = True
+    for j in robot.joints:
+        if j.parent not in tfs or j.child not in tfs:
+            continue
+        c = edge_color if edge_color is not None else JOINT_STYLE.get(j.type, JOINT_STYLE["fixed"])["color"]
+        p, ch = tfs[j.parent], tfs[j.child]
+        ax.plot([p[0, 3], ch[0, 3]], [p[1, 3], ch[1, 3]], [p[2, 3], ch[2, 3]],
+                color=c, linewidth=2, linestyle=style, alpha=alpha,
+                label=(label if first else None))
+        first = False
+
+
+def _fig_png(fig) -> bytes:
+    buf = io.BytesIO()
+    fig.savefig(buf, format="png", bbox_inches="tight", dpi=100)
+    plt.close(fig)
+    return buf.getvalue()
+
+
+def _assemble_gif(pngs: list[bytes], fps: float) -> bytes:
+    from PIL import Image
+    imgs = [Image.open(io.BytesIO(p)).convert("RGB") for p in pngs]
+    buf = io.BytesIO()
+    imgs[0].save(buf, format="GIF", save_all=True, append_images=imgs[1:],
+                 duration=max(1, int(round(1000.0 / max(fps, 1e-6)))), loop=0)
+    return buf.getvalue()
+
+
+def render_motion(
+    robot: Robot,
+    frames: list[dict],
+    *,
+    fmt: MotionFormat = "gif",
+    fps: float = 10.0,
+    elev: float = 22.0,
+    azim: float = -60.0,
+    track_link: Optional[str] = None,
+    title: Optional[str] = None,
+):
+    """Animate ``robot`` through ``frames`` (a list of ``{joint: value}`` configs).
+
+    ``fmt="gif"`` returns animated-GIF bytes; ``fmt="frames"`` returns the list of
+    per-frame PNG bytes. ``track_link`` draws the trailing path of that link's
+    origin. The camera box is fixed across all frames so the robot doesn't drift.
+    """
+    tfs_list = _frame_transforms(robot, frames)
+    lim = _global_limits([tfs_list])
+    trail: list[tuple[float, float, float]] = []
+    pngs: list[bytes] = []
+    for i, tfs in enumerate(tfs_list):
+        fig = plt.figure(figsize=(6, 5))
+        ax = fig.add_subplot(111, projection="3d")
+        _draw_skeleton(ax, robot, tfs)
+        if track_link and track_link in tfs:
+            T = tfs[track_link]
+            trail.append((float(T[0, 3]), float(T[1, 3]), float(T[2, 3])))
+            t = np.array(trail)
+            ax.plot(t[:, 0], t[:, 1], t[:, 2], color=TRACE_COLOR, linewidth=1.4, alpha=0.85)
+        _apply_limits(ax, lim)
+        ax.view_init(elev=elev, azim=azim)
+        ax.set_title(title or f"{robot.name} — frame {i + 1}/{len(tfs_list)}", fontsize=10)
+        pngs.append(_fig_png(fig))
+    return pngs if fmt == "frames" else _assemble_gif(pngs, fps)
+
+
+def render_motion_comparison(
+    robot: Robot,
+    nominal: list[dict],
+    faulted: list[dict],
+    *,
+    labels: tuple[str, str] = ("nominal", "faulted"),
+    layout: Literal["overlay", "sidebyside"] = "overlay",
+    fmt: MotionFormat = "gif",
+    fps: float = 10.0,
+    elev: float = 22.0,
+    azim: float = -60.0,
+    track_link: Optional[str] = None,
+    title: Optional[str] = None,
+):
+    """Animate a ``nominal`` motion against a ``faulted`` one so reality can be
+    compared to the simulation — the headline 3D fault-motion visual.
+
+    ``layout="overlay"`` draws both robots in one axes (nominal solid blue,
+    faulted dashed red) with a dotted line marking the end-effector divergence and
+    its magnitude in the title; ``"sidebyside"`` uses two panels. ``track_link``
+    is the link whose divergence is measured (defaults to a leaf link). The two
+    trajectories are paired frame-by-frame and truncated to the shorter one.
+    ``fmt`` is as in :func:`render_motion`.
+    """
+    n_tfs = _frame_transforms(robot, nominal)
+    f_tfs = _frame_transforms(robot, faulted)
+    n = min(len(n_tfs), len(f_tfs))
+    n_tfs, f_tfs = n_tfs[:n], f_tfs[:n]
+    lim = _global_limits([n_tfs, f_tfs])
+    if track_link is None:
+        leaves = leaf_links(build_graph(robot))
+        track_link = sorted(leaves)[0] if leaves else None
+
+    pngs: list[bytes] = []
+    for i in range(n):
+        nt, ft = n_tfs[i], f_tfs[i]
+        diverge = None
+        if track_link and track_link in nt and track_link in ft:
+            diverge = (nt[track_link][:3, 3], ft[track_link][:3, 3])
+        if layout == "sidebyside":
+            fig = plt.figure(figsize=(10, 5))
+            axn = fig.add_subplot(121, projection="3d")
+            axf = fig.add_subplot(122, projection="3d")
+            _draw_skeleton(axn, robot, nt, edge_color=NOMINAL_COLOR, node_color=NOMINAL_COLOR)
+            _draw_skeleton(axf, robot, ft, edge_color=FAULT_COLOR, node_color=FAULT_COLOR)
+            for ax, lab in ((axn, labels[0]), (axf, labels[1])):
+                _apply_limits(ax, lim)
+                ax.view_init(elev=elev, azim=azim)
+                ax.set_title(lab, fontsize=10)
+            sup = title or robot.name
+            if diverge is not None:
+                sup += f" — Δ{track_link} = {float(np.linalg.norm(diverge[0] - diverge[1])) * 1000:.0f} mm"
+            fig.suptitle(sup, fontsize=11)
+        else:  # overlay
+            fig = plt.figure(figsize=(6.5, 5.5))
+            ax = fig.add_subplot(111, projection="3d")
+            _draw_skeleton(ax, robot, nt, edge_color=NOMINAL_COLOR, node_color=NOMINAL_COLOR,
+                           label=labels[0])
+            _draw_skeleton(ax, robot, ft, edge_color=FAULT_COLOR, node_color=FAULT_COLOR,
+                           style="dashed", alpha=0.95, label=labels[1])
+            ttl = title or robot.name
+            if diverge is not None:
+                pn, pf = diverge
+                ax.plot([pn[0], pf[0]], [pn[1], pf[1]], [pn[2], pf[2]],
+                        color="#7F8C8D", linestyle=":", linewidth=1.2)
+                ttl += f" — Δ{track_link} = {float(np.linalg.norm(pn - pf)) * 1000:.0f} mm"
+            _apply_limits(ax, lim)
+            ax.view_init(elev=elev, azim=azim)
+            ax.legend(loc="upper left", fontsize=8)
+            ax.set_title(ttl, fontsize=10)
+        pngs.append(_fig_png(fig))
+    return pngs if fmt == "frames" else _assemble_gif(pngs, fps)
 
 
 # --- mesh-accurate pose render ---------------------------------------------

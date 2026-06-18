@@ -6,6 +6,22 @@ to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Added
+- **3D fault-motion visuals — `render_motion` / `render_motion_comparison`**
+  (`fieldpilot_urdf.viz`, the `[viz]` extra). Animate a robot through a trajectory
+  (a list of `{joint: value}` configs — `plan_path` output, `TimedTrajectory.as_dicts()`,
+  a sim trajectory) as a 3D stick-figure video, so the tech can compare reality to
+  the simulation. `render_motion` plays one motion (with an optional `track_link`
+  end-effector trail); `render_motion_comparison` plays a **nominal** motion
+  against a **faulted** one — `layout="overlay"` draws both in one axes (nominal
+  solid blue, faulted dashed red) with a dotted line marking the end-effector
+  divergence and its magnitude in the title, or `layout="sidebyside"` for two
+  panels. The camera box is fixed across all frames so the robot doesn't drift,
+  and the two trajectories are paired frame-by-frame. `fmt="gif"` returns
+  animated-GIF bytes (assembled via Pillow, a matplotlib dependency);
+  `fmt="frames"` returns the per-frame PNG bytes. Mesh-free stick figures, like
+  `render_pose_3d`. First of the diagnostics visual pair (oscilloscope traces next).
+
 ## [1.18.0] — 2026-06-18
 
 Second slice of the interactive diagnostics direction: a **case knowledge base**.
