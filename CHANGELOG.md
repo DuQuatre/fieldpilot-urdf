@@ -6,6 +6,14 @@ to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [1.25.0] — 2026-06-18
+
+Closes the field loop in the **technician's Telegram chat**. The new
+`fieldpilot_urdf.telegram` module builds the bot's reply — the French diagnosis
+summary, the simulation illustrations (3D GIF / oscilloscope PNG), and the PDF —
+as Bot API request data, so the open core stays free of Telegram dependencies and
+network I/O. No breaking changes; additive over the 1.24 public API. 436 tests.
+
 ### Added
 - **Telegram bot reply wiring — `fieldpilot_urdf.telegram`.** Closes the field
   loop back in the technician's chat. As with the Odoo wiring, the open core
@@ -851,6 +859,7 @@ standalone, pure-Python, pip-installable package (AGPL-3.0).
   spare-parts BOM, and multi-tenant hosting are **not** part of this package —
   they live in FieldPilot SaaS.
 
+[1.25.0]: https://github.com/DuQuatre/fieldpilot-urdf/releases/tag/v1.25.0
 [1.24.0]: https://github.com/DuQuatre/fieldpilot-urdf/releases/tag/v1.24.0
 [1.23.0]: https://github.com/DuQuatre/fieldpilot-urdf/releases/tag/v1.23.0
 [1.22.0]: https://github.com/DuQuatre/fieldpilot-urdf/releases/tag/v1.22.0
