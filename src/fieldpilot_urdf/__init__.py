@@ -13,8 +13,9 @@ and `from fieldpilot_urdf.viz import render_kinematic_tree, render_pose_3d`.
 __version__ = "1.13.0.dev0"
 
 from .collisions import (
-    MeshResolver, aabb_overlap, clear_mesh_cache, detect_self_collisions,
-    link_collision_aabbs, transform_aabb, unresolved_meshes,
+    MeshResolver, Obstacle, aabb_overlap, box_obstacle, clear_mesh_cache,
+    detect_obstacle_collisions, detect_self_collisions, link_collision_aabbs,
+    sphere_obstacle, transform_aabb, unresolved_meshes,
 )
 from .diagnostics import Finding, RULES, run_all, summary
 from .mesh import SUPPORTED_FORMATS, read_mesh_bounds
@@ -74,6 +75,7 @@ __all__ = [
     "forward_kinematics", "joint_motion", "origin_to_T", "R_to_rpy", "rotation_around_axis", "rpy_to_R",
     "aabb_overlap", "detect_self_collisions", "link_collision_aabbs", "transform_aabb",
     "MeshResolver", "clear_mesh_cache", "unresolved_meshes",
+    "Obstacle", "box_obstacle", "sphere_obstacle", "detect_obstacle_collisions",
     "read_mesh_bounds", "SUPPORTED_FORMATS",
     "save_robot", "load_robot", "load_meta", "load_resolver", "list_robots", "delete_robot",
     "Patch", "REPAIRS", "UNFIXABLE_CODES", "repair",

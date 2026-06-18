@@ -188,6 +188,64 @@ def detect_self_collisions(
     return hits
 
 
+# --- environment / world obstacles -----------------------------------------
+
+@dataclass(frozen=True)
+class Obstacle:
+    """A static world-frame obstacle, represented (like everything here) as an
+    axis-aligned bounding box. Build one with :func:`box_obstacle` /
+    :func:`sphere_obstacle`, or directly from world ``lower`` / ``upper`` corners."""
+
+    name: str
+    lower: tuple[float, float, float]
+    upper: tuple[float, float, float]
+
+    @property
+    def aabb(self) -> AABB:
+        return np.asarray(self.lower, dtype=float), np.asarray(self.upper, dtype=float)
+
+
+def box_obstacle(name: str, center, size) -> Obstacle:
+    """A box obstacle centred at ``center`` with full extents ``size`` (sx, sy, sz)."""
+    c = np.asarray(center, dtype=float)
+    h = np.asarray(size, dtype=float) / 2.0
+    return Obstacle(name, tuple(c - h), tuple(c + h))
+
+
+def sphere_obstacle(name: str, center, radius: float) -> Obstacle:
+    """A sphere obstacle, bounded by its enclosing AABB (conservative — matches
+    the AABB-only collision model used throughout this module)."""
+    c = np.asarray(center, dtype=float)
+    r = float(radius)
+    return Obstacle(name, tuple(c - r), tuple(c + r))
+
+
+def detect_obstacle_collisions(
+    robot: Robot,
+    obstacles: Optional[list[Obstacle]],
+    q: Optional[dict[str, float]] = None,
+    *,
+    mesh_resolver: Optional[MeshResolver] = None,
+    tol: float = 0.0,
+) -> list[tuple[str, str]]:
+    """Return ``(link_name, obstacle_name)`` pairs whose AABBs overlap — the
+    world-collision counterpart of :func:`detect_self_collisions`.
+
+    Empty list when ``obstacles`` is empty/None. Mesh shapes contribute only
+    when ``mesh_resolver`` can resolve the file (same contract as the rest of
+    the module). ``tol`` inflates the overlap test (positive = more conservative).
+    """
+    if not obstacles:
+        return []
+    aabbs = link_collision_aabbs(robot, q=q, mesh_resolver=mesh_resolver)
+    hits: list[tuple[str, str]] = []
+    for link, boxes in aabbs.items():
+        for obs in obstacles:
+            if any(aabb_overlap(b[1], obs.aabb, tol) for b in boxes):
+                hits.append((link, obs.name))
+    return hits
+
+
 def unresolved_meshes(
     robot: Robot, mesh_resolver: Optional[MeshResolver] = None,
 ) -> list[tuple[str, str, str]]:

@@ -13,7 +13,9 @@ from typing import Iterable, Optional
 import numpy as np
 from pydantic import BaseModel
 
-from .collisions import MeshResolver, detect_self_collisions
+from .collisions import (
+    MeshResolver, Obstacle, detect_obstacle_collisions, detect_self_collisions,
+)
 from .fk import forward_kinematics
 from .models import Joint, Robot
 
@@ -22,7 +24,7 @@ from .models import Joint, Robot
 
 class StepFinding(BaseModel):
     step: int
-    code: str  # "limit" | "collision"
+    code: str  # "limit" | "collision" (self or obstacle — see detail)
     detail: str
     refs: list[str] = []
 
@@ -37,10 +39,12 @@ def check_trajectory(
     *,
     check_collisions: bool = True,
     mesh_resolver: Optional[MeshResolver] = None,
+    obstacles: Optional[list[Obstacle]] = None,
 ) -> list[StepFinding]:
     """For each q in the sequence: flag joint-limit violations and (optionally)
-    self-collisions. Returns a flat list of per-step findings; an empty list
-    means the trajectory is clean.
+    self-collisions, plus collisions against any world ``obstacles``. Returns a
+    flat list of per-step findings; an empty list means the trajectory is clean.
+    Obstacle hits use ``code="collision"`` (the detail text says which).
     """
     by_name = _joint_index(robot)
     out: list[StepFinding] = []
@@ -76,6 +80,18 @@ def check_trajectory(
                     detail=f"AABB self-collision: '{a}' <-> '{b}'",
                     refs=[a, b],
                 ))
+            if obstacles:
+                try:
+                    obs_hits = detect_obstacle_collisions(
+                        robot, obstacles, q=q, mesh_resolver=mesh_resolver)
+                except ValueError:
+                    obs_hits = []
+                for link, obs_name in obs_hits:
+                    out.append(StepFinding(
+                        step=step, code="collision",
+                        detail=f"AABB obstacle-collision: '{link}' <-> obstacle '{obs_name}'",
+                        refs=[link, obs_name],
+                    ))
     return out
 
 
