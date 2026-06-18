@@ -6,6 +6,16 @@ to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [1.20.0] — 2026-06-18
+
+Final slice of the interactive diagnostics direction: **oscilloscope parameter
+visuals**. `fieldpilot_urdf.viz` gains `render_scope` and
+`render_trajectory_scope` (the `[viz]` extra) — stacked time-series panels of
+joint parameters with the expected (simulated) signal overlaid against the
+observed one and the divergence shaded. Together with the 1.19 3D fault-motion
+video this completes the visual diagnostics story (3D motion + quantitative
+traces). No breaking changes; additive over the 1.19 public API. 407 tests.
+
 ### Added
 - **Oscilloscope parameter visuals — `render_scope` / `render_trajectory_scope`**
   (`fieldpilot_urdf.viz`, the `[viz]` extra). Stacked time-series panels — a
@@ -729,6 +739,7 @@ standalone, pure-Python, pip-installable package (AGPL-3.0).
   spare-parts BOM, and multi-tenant hosting are **not** part of this package —
   they live in FieldPilot SaaS.
 
+[1.20.0]: https://github.com/DuQuatre/fieldpilot-urdf/releases/tag/v1.20.0
 [1.19.0]: https://github.com/DuQuatre/fieldpilot-urdf/releases/tag/v1.19.0
 [1.18.0]: https://github.com/DuQuatre/fieldpilot-urdf/releases/tag/v1.18.0
 [1.17.0]: https://github.com/DuQuatre/fieldpilot-urdf/releases/tag/v1.17.0
