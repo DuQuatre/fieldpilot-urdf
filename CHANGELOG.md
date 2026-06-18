@@ -6,6 +6,14 @@ to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [1.21.0] — 2026-06-18
+
+Adds a runnable **end-to-end diagnostics example** tying the 1.14–1.20 Layer-4
+features into one reference workflow — symptom → localise → prior → dialog →
+calibrate → recommend → record → visualise — on a robot with one miscalibrated
+joint, offline and deterministic, guarded by a smoke test. No code changes to the
+package; additive over the 1.20 public API. 409 tests.
+
 ### Added
 - **End-to-end diagnostics example — `examples/diagnostics_workflow.py`.** A
   runnable, offline, deterministic walkthrough of the whole Layer-4 loop on a
@@ -752,6 +760,7 @@ standalone, pure-Python, pip-installable package (AGPL-3.0).
   spare-parts BOM, and multi-tenant hosting are **not** part of this package —
   they live in FieldPilot SaaS.
 
+[1.21.0]: https://github.com/DuQuatre/fieldpilot-urdf/releases/tag/v1.21.0
 [1.20.0]: https://github.com/DuQuatre/fieldpilot-urdf/releases/tag/v1.20.0
 [1.19.0]: https://github.com/DuQuatre/fieldpilot-urdf/releases/tag/v1.19.0
 [1.18.0]: https://github.com/DuQuatre/fieldpilot-urdf/releases/tag/v1.18.0

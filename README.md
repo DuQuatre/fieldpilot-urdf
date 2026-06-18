@@ -11,8 +11,8 @@
 robotics toolkit — small, self-contained, pure-Python. Point it at a robot on
 GitHub and get a working kinematic model in three lines.
 
-> **Status: `1.20.0` — stable, published on [PyPI](https://pypi.org/project/fieldpilot-urdf/).**
-> 407 passing tests, a documented [public API](#public-api--stability) under
+> **Status: `1.21.0` — stable, published on [PyPI](https://pypi.org/project/fieldpilot-urdf/).**
+> 409 passing tests, a documented [public API](#public-api--stability) under
 > SemVer. `pip install fieldpilot-urdf` (see [`RELEASING.md`](RELEASING.md) for
 > how releases are cut).
 
