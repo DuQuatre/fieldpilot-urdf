@@ -6,6 +6,16 @@ to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [1.14.0] — 2026-06-18
+
+Brings the kinematics toolkit to the **diagnostics** layer. Every diagnostics
+tool so far reasoned structurally (downstream-link overlap) or by simulation;
+the new `fieldpilot_urdf.kinematic_diagnosis` module reasons *geometrically* —
+given a link's observed vs. commanded pose, `localize_joint_fault` ranks the
+chain's joints by how well a single calibration offset on each explains the
+deviation, via the 1.10 geometric Jacobian. Pure NumPy. No breaking changes;
+additive over the 1.13 public API. 353 tests.
+
 ### Added
 - **Kinematic fault localization — `localize_joint_fault`.** New
   `fieldpilot_urdf.kinematic_diagnosis` module: the first diagnostics tool that
@@ -569,6 +579,7 @@ standalone, pure-Python, pip-installable package (AGPL-3.0).
   spare-parts BOM, and multi-tenant hosting are **not** part of this package —
   they live in FieldPilot SaaS.
 
+[1.14.0]: https://github.com/DuQuatre/fieldpilot-urdf/releases/tag/v1.14.0
 [1.13.0]: https://github.com/DuQuatre/fieldpilot-urdf/releases/tag/v1.13.0
 [1.12.0]: https://github.com/DuQuatre/fieldpilot-urdf/releases/tag/v1.12.0
 [1.11.0]: https://github.com/DuQuatre/fieldpilot-urdf/releases/tag/v1.11.0
