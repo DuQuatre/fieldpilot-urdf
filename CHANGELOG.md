@@ -6,6 +6,14 @@ to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [1.26.0] — 2026-06-18
+
+Wires the diagnosis's spare parts into the **SPA module's Odoo order**. The new
+`fieldpilot_urdf.spare_parts` module builds the Odoo `sale.order` create-values
+(a line per part, matched to catalogue products, linked to the intervention) as
+pure data, so the open core stays free of Odoo dependencies and network I/O. No
+breaking changes; additive over the 1.25 public API. 442 tests.
+
 ### Added
 - **SPA spare-parts order wiring — `fieldpilot_urdf.spare_parts`.** Turns a
   confirmed report's spare parts into the SPA module's Odoo order. As with the
@@ -876,6 +884,7 @@ standalone, pure-Python, pip-installable package (AGPL-3.0).
   spare-parts BOM, and multi-tenant hosting are **not** part of this package —
   they live in FieldPilot SaaS.
 
+[1.26.0]: https://github.com/DuQuatre/fieldpilot-urdf/releases/tag/v1.26.0
 [1.25.0]: https://github.com/DuQuatre/fieldpilot-urdf/releases/tag/v1.25.0
 [1.24.0]: https://github.com/DuQuatre/fieldpilot-urdf/releases/tag/v1.24.0
 [1.23.0]: https://github.com/DuQuatre/fieldpilot-urdf/releases/tag/v1.23.0
