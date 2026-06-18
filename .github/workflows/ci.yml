@@ -10,6 +10,10 @@ jobs:
   test:
     name: test py${{ matrix.python-version }}${{ matrix.xacro && format(' · xacro {0}', matrix.xacro) || '' }}
     runs-on: ubuntu-latest
+    # The whole job runs in minutes; cap it well under GitHub's 6h default so a
+    # stalled apt mirror (see the install step) fails fast and is re-runnable
+    # instead of burning hours of runner time.
+    timeout-minutes: 30
     strategy:
       fail-fast: false
       matrix:
@@ -32,9 +36,15 @@ jobs:
       # offscreen instead of skipping. Both renderer test groups skip without
       # these. EGL+llvmpipe is more reliable on CI than Ubuntu's stock OSMesa.
       - name: Install graphviz + Mesa EGL (headless GL)
+        env:
+          DEBIAN_FRONTEND: noninteractive
+        # Bound apt against flaky Ubuntu mirrors: a per-connection timeout makes
+        # a stalled mirror error out in seconds (not hang until the job ceiling)
+        # and retries ride out transient failures.
         run: |
-          sudo apt-get update
-          sudo apt-get install -y graphviz \
+          APT_OPTS="-o Acquire::Retries=3 -o Acquire::http::Timeout=30 -o Acquire::https::Timeout=30"
+          sudo apt-get update $APT_OPTS
+          sudo apt-get install -y $APT_OPTS graphviz \
             libegl1 libgles2 libgl1-mesa-dri libglvnd0 libgbm1
 
       - name: Install package (with all extras + dev)

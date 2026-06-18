@@ -18,8 +18,9 @@ real call, fully offline and deterministic:
    11. Notify       report -> Telegram bot replies to the technician                     (1.25)
    12. Order        spare parts -> Odoo SPA sale.order payload                            (1.26)
    13. Dashboard    case base -> KPI summary for the admin/MRR dashboard                  (1.27)
+   14. Digest       KPIs -> weekly French email digest                                    (1.28)
 
-    pip install fieldpilot-urdf            # steps 1–7, 9–13 (core)
+    pip install fieldpilot-urdf            # steps 1–7, 9–14 (core)
     pip install "fieldpilot-urdf[viz]"     # + step 8 visuals & report illustrations
     python examples/diagnostics_workflow.py
 """
@@ -37,7 +38,7 @@ from fieldpilot_urdf import (
     intervention_task_vals, list_cases, load_cases, localize_joint_fault,
     next_question, photo_requests, recommend_solution, render_report_html,
     report_summary_text, save_case, spare_parts_order_vals, telegram_messages,
-    unresolved_part_refs, update_beliefs,
+    unresolved_part_refs, update_beliefs, weekly_digest,
 )
 from fieldpilot_urdf.fk import R_to_rpy
 
@@ -265,6 +266,12 @@ def main(out_dir: Optional[Path] = None) -> dict:
         ts = stats.top_solutions[0]
         print(f"  best fix: {ts.solution} ({ts.successes}/{ts.attempts} = {ts.success_rate:.0%})")
 
+    # 14. Digest: the weekly email that pushes those KPIs to the managers.
+    banner("14. DIGEST — weekly email of the KPIs")
+    digest = weekly_digest(stats, period_label="semaine en cours")
+    print(f"  subject: {digest.subject}")
+    print(f"  html {len(digest.html_body)} chars, text {len(digest.text_body)} chars")
+
     print("\n" + "=" * 74)
     print(f"  Diagnosed {resolved_fault} (offset {cal.offsets.get(resolved_fault, 0):+.3f} rad), "
           f"fix: {fix}.")
@@ -283,6 +290,7 @@ def main(out_dir: Optional[Path] = None) -> dict:
         "spa_unresolved": missing,
         "dashboard_total_cases": stats.total_cases,
         "dashboard_top_fault": stats.top_faults[0].fault if stats.top_faults else None,
+        "digest_subject": digest.subject,
     }
 
 

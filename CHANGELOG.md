@@ -6,6 +6,17 @@ to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Added
+- **Weekly email digest of the dashboard KPIs — `fieldpilot_urdf.digest`.**
+  Pushes the case statistics to managers as a weekly email. `weekly_digest`
+  renders a `CaseStatsSummary` into an `EmailDigest` — a French subject plus a
+  self-contained HTML body and a plain-text body (totals, resolution rate, the
+  top-faults and best-fixes tables). Pass last period's summary as `previous` and
+  the case count and resolution rate show week-over-week deltas; an empty period
+  renders a valid "no interventions" digest. The package builds the content; n8n
+  / SMTP sends it. The example gains a step 14 DIGEST; the guide gains a weekly-
+  digest snippet. Pure Python.
+
 ## [1.27.0] — 2026-06-18
 
 Wires the diagnostic case statistics into the **admin / MRR dashboard**. The new

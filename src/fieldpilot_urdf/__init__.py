@@ -87,6 +87,7 @@ from .spare_parts import (
     spare_parts_order_lines, spare_parts_order_vals, unresolved_part_refs,
 )
 from .dashboard import CaseStatsSummary, FaultStat, case_stats_summary
+from .digest import EmailDigest, weekly_digest
 
 __all__ = [
     "__version__",
@@ -130,4 +131,5 @@ __all__ = [
     "TelegramRequest", "TelegramAttachment", "report_summary_text", "telegram_messages",
     "spare_parts_order_vals", "spare_parts_order_lines", "unresolved_part_refs",
     "case_stats_summary", "CaseStatsSummary", "FaultStat",
+    "weekly_digest", "EmailDigest",
 ]
