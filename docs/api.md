@@ -82,6 +82,12 @@ joint-space path whose link follows a straight line in SE(3), via a resolved-rat
 servo over the geometric Jacobian with singular-direction-only damping; `path`
 feeds straight into `check_trajectory` / `forward_kinematics`)
 
+**Time-parameterization** — `time_parameterize`, `TimedTrajectory` (assign a
+geometric path a schedule under joint velocity limits — a trapezoidal velocity
+profile over the path's arc length, with an optional `max_acceleration` for
+smooth ramps; returns positions + velocities sampled over time, `as_dicts()`
+feeds `check_trajectory` and the result mirrors `simulate.Trajectory`)
+
 ### Layer 4 — Diagnostics
 
 **Localise** — `rank_root_causes`, `RootCauseCandidate`, `affected_links`,

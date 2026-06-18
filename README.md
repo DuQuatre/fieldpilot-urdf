@@ -115,6 +115,18 @@ print(res.success, res.reached_fraction)                # straight-line move in 
 print(res.path[-1])                                     # final joint config
 ```
 
+A planned path is purely geometric — `time_parameterize` gives it a schedule
+that respects the joints' velocity limits, turning waypoints into motion over
+time (positions *and* velocities) ready for the dynamics layer.
+
+```python
+from fieldpilot_urdf import time_parameterize
+
+traj = time_parameterize(robot, res.path, max_acceleration=2.0)  # trapezoidal profile
+print(traj.duration, len(traj.times))                            # timed, velocity-limited
+print(traj.sample(traj.duration / 2))                           # joint config at any t
+```
+
 ### Render (needs the `[viz]` extra)
 
 ```python

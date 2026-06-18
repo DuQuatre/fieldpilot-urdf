@@ -6,6 +6,23 @@ to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Added
+- **Trajectory time-parameterization — `time_parameterize`.** New
+  `fieldpilot_urdf.retime` module: the bridge from a *geometric* path to an
+  *executable* motion. The planners (`plan_path`, `plan_cartesian_path`) emit
+  untimed waypoints; `time_parameterize` lays a **trapezoidal velocity profile**
+  over the path's joint-space arc length, honouring each joint's velocity limit
+  (`JointLimit.velocity` — until now unused for motion). Cruise speed is set by
+  the most velocity-constraining segment (conservative, but the per-joint limits
+  are *always* respected) and scaled by `velocity_scale`; an optional
+  `max_acceleration` adds smooth accel/decel ramps (omit it for a rectangular
+  profile). Returns a **`TimedTrajectory`** (`joint_ids`, `times`, `q`, `u`,
+  plus `duration`, `as_dicts()`, `final_q()`, and arbitrary-time `sample(t)`) —
+  mirroring `simulate.Trajectory`'s shape, so the two interoperate, and feeding
+  the dynamics / simulation layer. Continuous joints take the shortest wrapped
+  path (matching the planners). Pure NumPy. Single-profile retiming — full
+  per-segment time-optimal parameterization (TOPP) is out of scope.
+
 ## [1.11.0] — 2026-06-17
 
 Adds **Cartesian (task-space) path planning**. Where 1.5's `plan_path` plans in
