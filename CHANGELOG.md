@@ -4,6 +4,8 @@ All notable changes to `fieldpilot-urdf` are documented here. Format follows
 [Keep a Changelog](https://keepachangelog.com/), and the project aims to adhere
 to [Semantic Versioning](https://semver.org/).
 
+## [Unreleased]
+
 ## [1.28.0] — 2026-06-18
 
 Pushes the dashboard KPIs to managers as a **weekly email digest**. The new
