@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "fieldpilot-urdf"
-version = "1.23.0.dev0"
+version = "1.23.0"
 description = "Import any ROS robot from a URL and run FK/IK/collision/validation in pure Python — no ROS install, no build."
 readme = "README.md"
 requires-python = ">=3.10"

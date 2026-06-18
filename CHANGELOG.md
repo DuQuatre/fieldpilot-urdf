@@ -6,6 +6,15 @@ to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [1.23.0] — 2026-06-18
+
+Wires the diagnostic report into the end-to-end example and ships **illustrated
+documentation**. The report gains a spare-parts list, the runnable example now
+assembles the French `rapport.html` (photos + simulation illustrations + spare
+parts), and a new illustrated guide walks one scenario from symptom to report
+with generated figures. No breaking changes; additive over the 1.22 public API.
+419 tests.
+
 ### Added
 - **Spare parts on the report.** `DiagnosticReport` gains a `spare_parts` list of
   the new `SparePart` model (`reference`, `name`, `quantity`); `render_report_html`
@@ -800,6 +809,7 @@ standalone, pure-Python, pip-installable package (AGPL-3.0).
   spare-parts BOM, and multi-tenant hosting are **not** part of this package —
   they live in FieldPilot SaaS.
 
+[1.23.0]: https://github.com/DuQuatre/fieldpilot-urdf/releases/tag/v1.23.0
 [1.22.0]: https://github.com/DuQuatre/fieldpilot-urdf/releases/tag/v1.22.0
 [1.21.0]: https://github.com/DuQuatre/fieldpilot-urdf/releases/tag/v1.21.0
 [1.20.0]: https://github.com/DuQuatre/fieldpilot-urdf/releases/tag/v1.20.0
