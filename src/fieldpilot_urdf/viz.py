@@ -34,6 +34,7 @@ matplotlib.use("Agg")  # headless backend; safe under uvicorn / pytest
 import matplotlib.pyplot as plt  # noqa: E402
 
 import numpy as np  # noqa: E402
+from pydantic import BaseModel, Field  # noqa: E402
 
 from .fk import forward_kinematics
 from .graph import build_graph, leaf_links
@@ -369,6 +370,128 @@ def render_motion_comparison(
             ax.set_title(ttl, fontsize=10)
         pngs.append(_fig_png(fig))
     return pngs if fmt == "frames" else _assemble_gif(pngs, fps)
+
+
+# --- oscilloscope parameter traces -----------------------------------------
+#
+# Stacked time-series panels (a multi-channel "scope") for joint parameters —
+# position / velocity / effort over time — with an expected (simulated) signal
+# overlaid against the observed one, so a tech can see *where* and *how much* the
+# real robot diverges from the model. render_scope is the general plotter;
+# render_trajectory_scope is the convenience for our TimedTrajectory /
+# simulate.Trajectory (anything with joint_ids / times / q / u).
+
+
+class ScopeSeries(BaseModel):
+    """One trace on a panel: a time-series with a label and line style."""
+
+    label: str = Field(..., description="Legend label (e.g. 'expected', 'observed')")
+    times: list[float] = Field(..., description="X values (seconds)")
+    values: list[float] = Field(..., description="Y values, same length as times")
+    style: str = Field("solid", description="matplotlib linestyle")
+
+
+class ScopePanel(BaseModel):
+    """One stacked subplot — typically one joint+parameter — with its traces."""
+
+    ylabel: str = Field(..., description="Y-axis label (e.g. 'j3 position (rad)')")
+    series: list[ScopeSeries] = Field(default_factory=list)
+    shade_divergence: bool = Field(
+        False, description="With exactly 2 same-grid series, shade the gap and annotate max |Δ|")
+
+
+def render_scope(
+    panels: list[ScopePanel],
+    *,
+    title: Optional[str] = None,
+    xlabel: str = "time (s)",
+    size: Optional[tuple[float, float]] = None,
+    fmt: Format = "png",
+) -> bytes:
+    """Render stacked time-series panels (a multi-channel oscilloscope) sharing an
+    x-axis. Each :class:`ScopePanel` overlays its :class:`ScopeSeries`; when a
+    panel has exactly two series on the *same* time grid and ``shade_divergence``
+    is set, the gap between them is shaded and the max ``|Δ|`` annotated."""
+    if not panels:
+        raise ValueError("no panels to plot")
+    n = len(panels)
+    fig, axes = plt.subplots(n, 1, figsize=size or (7.0, 2.1 * n), sharex=True, squeeze=False)
+    axes = axes[:, 0]
+    for ax, panel in zip(axes, panels):
+        for s in panel.series:
+            ax.plot(s.times, s.values, linestyle=s.style, linewidth=1.6, label=s.label)
+        if (panel.shade_divergence and len(panel.series) == 2
+                and panel.series[0].times == panel.series[1].times):
+            a, b = panel.series
+            ta = np.asarray(a.times, dtype=float)
+            va, vb = np.asarray(a.values, dtype=float), np.asarray(b.values, dtype=float)
+            ax.fill_between(ta, va, vb, color=FAULT_COLOR, alpha=0.15)
+            dmax = float(np.max(np.abs(va - vb))) if ta.size else 0.0
+            ax.text(0.99, 0.05, f"max Δ = {dmax:.3g}", transform=ax.transAxes,
+                    ha="right", va="bottom", fontsize=7, color="#922B21")
+        ax.set_ylabel(panel.ylabel, fontsize=9)
+        ax.grid(True, alpha=0.3)
+        if panel.series:
+            ax.legend(loc="upper right", fontsize=7)
+    axes[-1].set_xlabel(xlabel, fontsize=9)
+    if title:
+        fig.suptitle(title, fontsize=11)
+    fig.tight_layout()
+    buf = io.BytesIO()
+    fig.savefig(buf, format=fmt, bbox_inches="tight", dpi=110)
+    plt.close(fig)
+    return buf.getvalue()
+
+
+_SIGNAL_ATTR = {"position": "q", "velocity": "u"}
+
+
+def _traj_series(traj, joint: str, attr: str, label: str, style: str) -> ScopeSeries:
+    idx = list(traj.joint_ids).index(joint)
+    rows = getattr(traj, attr)
+    return ScopeSeries(label=label, style=style,
+                       times=[float(t) for t in traj.times],
+                       values=[float(r[idx]) for r in rows])
+
+
+def render_trajectory_scope(
+    nominal,
+    observed=None,
+    *,
+    joints: Optional[list[str]] = None,
+    signals: tuple[str, ...] = ("position", "velocity"),
+    labels: tuple[str, str] = ("expected", "observed"),
+    title: Optional[str] = None,
+    shade: bool = True,
+    fmt: Format = "png",
+) -> bytes:
+    """Scope view of one or two trajectories: a stacked panel per (joint, signal),
+    the ``nominal`` (expected/simulated) trace overlaid with the ``observed`` one.
+
+    ``nominal`` / ``observed`` are any objects exposing ``joint_ids`` / ``times`` /
+    ``q`` (positions) / ``u`` (velocities) — e.g. a `TimedTrajectory` or a
+    `simulate.Trajectory`. ``signals`` chooses the parameters (``"position"`` →
+    ``q``, ``"velocity"`` → ``u``); ``joints`` defaults to ``nominal``'s joints.
+    With ``observed`` given and ``shade=True`` the divergence is shaded per panel
+    (when the two share a time grid). For effort/torque traces, build panels by
+    hand and call :func:`render_scope`.
+    """
+    bad = [s for s in signals if s not in _SIGNAL_ATTR]
+    if bad:
+        raise ValueError(f"unknown signal(s) {bad}; choose from {list(_SIGNAL_ATTR)}")
+    jn = joints if joints is not None else list(nominal.joint_ids)
+    units = {"position": "", "velocity": "/s"}
+    panels: list[ScopePanel] = []
+    for j in jn:
+        for sig in signals:
+            attr = _SIGNAL_ATTR[sig]
+            series = [_traj_series(nominal, j, attr, labels[0], "solid")]
+            if observed is not None:
+                series.append(_traj_series(observed, j, attr, labels[1], "dashed"))
+            panels.append(ScopePanel(
+                ylabel=f"{j} {sig}{units[sig]}", series=series,
+                shade_divergence=(shade and observed is not None)))
+    return render_scope(panels, title=title, fmt=fmt)
 
 
 # --- mesh-accurate pose render ---------------------------------------------

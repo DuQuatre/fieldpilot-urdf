@@ -308,6 +308,17 @@ gif = render_motion_comparison(robot, nominal_path, faulted_path,
 open("fault.gif", "wb").write(gif)   # nominal solid / faulted dashed, divergence marked
 ```
 
+…and the **scope traces** — joint position / velocity over time, expected vs
+observed, with the divergence shaded — the quantitative half of the comparison:
+
+```python
+from fieldpilot_urdf.viz import render_trajectory_scope
+
+png = render_trajectory_scope(expected_traj, observed_traj,        # TimedTrajectory / sim
+                              signals=("position", "velocity"))
+open("scope.png", "wb").write(png)   # stacked panels, max Δ annotated per channel
+```
+
 *(The natural-language front-end that turns a free-text or voice symptom into
 these hypotheses via an LLM is part of [FieldPilot](https://github.com/DuQuatre)
 SaaS. The reasoning core above stays local and deterministic.)*

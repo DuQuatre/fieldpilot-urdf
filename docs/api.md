@@ -162,12 +162,18 @@ pure NumPy — plus inverse dynamics and gravity-compensation torques)
 ### Visualisation — `fieldpilot_urdf.viz` (`[viz]` / `[meshviz]`)
 
 `render_kinematic_tree`, `render_pose_3d`, `render_motion`,
-`render_motion_comparison` (`[viz]`); `render_pose_mesh` (`[meshviz]`)
+`render_motion_comparison`, `render_scope`, `render_trajectory_scope` (`[viz]`);
+`render_pose_mesh` (`[meshviz]`)
 
 `render_motion` / `render_motion_comparison` animate a robot through a trajectory
 (list of `{joint: value}` configs) as a 3D stick-figure GIF (or PNG frames);
 the comparison plays a nominal motion against a faulted one (overlay or
 side-by-side) with the end-effector divergence marked — the 3D fault-motion video.
+
+`render_scope` (over `ScopePanel` / `ScopeSeries`) and `render_trajectory_scope`
+draw stacked time-series "oscilloscope" panels of joint parameters (position /
+velocity / effort) over time, overlaying expected vs observed with the divergence
+shaded — the quantitative companion to the 3D video.
 
 > The visualisation renderers are intentionally **not** re-exported from the
 > top-level package, so `import fieldpilot_urdf` stays light. Import them from
