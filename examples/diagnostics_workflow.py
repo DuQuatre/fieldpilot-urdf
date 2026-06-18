@@ -17,8 +17,9 @@ real call, fully offline and deterministic:
    10. Sync         report -> Gotenberg PDF request + Odoo project.task payload          (1.24)
    11. Notify       report -> Telegram bot replies to the technician                     (1.25)
    12. Order        spare parts -> Odoo SPA sale.order payload                            (1.26)
+   13. Dashboard    case base -> KPI summary for the admin/MRR dashboard                  (1.27)
 
-    pip install fieldpilot-urdf            # steps 1–7, 9–12 (core)
+    pip install fieldpilot-urdf            # steps 1–7, 9–13 (core)
     pip install "fieldpilot-urdf[viz]"     # + step 8 visuals & report illustrations
     python examples/diagnostics_workflow.py
 """
@@ -32,7 +33,7 @@ from typing import Optional
 from fieldpilot_urdf import (
     DiagnosticCase, DiagnosticReport, Joint, JointLimit, Link, Origin, PoseObservation,
     Question, Robot, SparePart, build_simulation_illustrations, calibrate_joint_offsets,
-    candidates_from_scores, fault_priors, forward_kinematics, gotenberg_request,
+    candidates_from_scores, case_stats_summary, fault_priors, forward_kinematics, gotenberg_request,
     intervention_task_vals, list_cases, load_cases, localize_joint_fault,
     next_question, photo_requests, recommend_solution, render_report_html,
     report_summary_text, save_case, spare_parts_order_vals, telegram_messages,
@@ -252,6 +253,18 @@ def main(out_dir: Optional[Path] = None) -> dict:
           f"{len(order['order_line'])} line(s)")
     print(f"  parts needing a product in Odoo first: {missing}")
 
+    # 13. Dashboard: roll the case base up into KPIs for the admin/MRR dashboard.
+    banner("13. DASHBOARD — case stats for the MRR dashboard")
+    stats = case_stats_summary(load_cases(root=root))
+    print(f"  cases: {stats.total_cases}, resolved: {stats.resolved_cases} "
+          f"({stats.resolution_rate:.0%}), distinct faults: {stats.distinct_faults}")
+    if stats.top_faults:
+        tf = stats.top_faults[0]
+        print(f"  top fault: {tf.fault} ({tf.count}× — {tf.share:.0%} of confirmed)")
+    if stats.top_solutions:
+        ts = stats.top_solutions[0]
+        print(f"  best fix: {ts.solution} ({ts.successes}/{ts.attempts} = {ts.success_rate:.0%})")
+
     print("\n" + "=" * 74)
     print(f"  Diagnosed {resolved_fault} (offset {cal.offsets.get(resolved_fault, 0):+.3f} rad), "
           f"fix: {fix}.")
@@ -268,6 +281,8 @@ def main(out_dir: Optional[Path] = None) -> dict:
         "telegram_methods": [m.method for m in tg],
         "spa_order_lines": len(order["order_line"]),
         "spa_unresolved": missing,
+        "dashboard_total_cases": stats.total_cases,
+        "dashboard_top_fault": stats.top_faults[0].fault if stats.top_faults else None,
     }
 
 
