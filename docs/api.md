@@ -116,6 +116,12 @@ offsets)
 information gain and Bayesian-update the posterior as the tech answers; stateless,
 so an n8n / LLM front-end drives the loop)
 
+**Case knowledge base** — `DiagnosticCase`, `save_case`, `load_case`,
+`load_cases`, `list_cases`, `delete_case`, `fault_priors`, `solution_stats`,
+`recommend_solution`, `SolutionStat` (remember resolved diagnoses; turn the
+history into fault-frequency priors — feeding `candidates_from_scores` — and
+per-fix success statistics)
+
 **Hypothesis-test** — `diagnose`, `Symptom`, `Hypothesis`, `Verdict`,
 `DiagnoseReport`
 

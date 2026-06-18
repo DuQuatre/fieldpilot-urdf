@@ -265,6 +265,23 @@ state = update_beliefs(candidates, questions, {"hold": "no"}) # tech answers
 print(state.leading, round(state.leading_prob, 2), state.resolved)  # motor_dead 1.0 True
 ```
 
+**Remember every case** so the diagnosis sharpens over time — store the resolved
+fault and the fix that worked, then mine the history for fault-frequency priors
+(which seed the dialog above) and for the fix with the best track record:
+
+```python
+from fieldpilot_urdf import (DiagnosticCase, save_case, load_cases,
+                             fault_priors, recommend_solution, candidates_from_scores)
+
+save_case(DiagnosticCase(id="INT-2026-0142", machine="robotA",
+                         confirmed_fault="motor_dead", solution="replace_motor",
+                         resolved=True))
+cases = load_cases()
+priors = fault_priors(cases, machine="robotA")            # learned fault frequencies
+seeded = candidates_from_scores(priors)                   # -> start the next dialog smarter
+print(recommend_solution(cases, "motor_dead"))            # the best-proven fix
+```
+
 Then **prove it** — inject the hypothesis on a copy, re-test, and confirm or
 refute. The ranked suspect feeds straight into `diagnose` as the hypothesis:
 

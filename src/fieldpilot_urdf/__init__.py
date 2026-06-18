@@ -68,6 +68,10 @@ from .differential_diagnosis import (
     BeliefState, Candidate, Question, QuestionScore, candidates_from_scores,
     next_question, rank_questions, update_beliefs,
 )
+from .case_base import (
+    DiagnosticCase, SolutionStat, delete_case, fault_priors, list_cases,
+    load_case, load_cases, recommend_solution, save_case, solution_stats,
+)
 
 __all__ = [
     "__version__",
@@ -102,4 +106,6 @@ __all__ = [
     "calibrate_joint_offsets", "PoseObservation", "CalibrationResult",
     "Candidate", "Question", "QuestionScore", "BeliefState",
     "rank_questions", "next_question", "update_beliefs", "candidates_from_scores",
+    "DiagnosticCase", "SolutionStat", "save_case", "load_case", "load_cases",
+    "list_cases", "delete_case", "fault_priors", "solution_stats", "recommend_solution",
 ]
