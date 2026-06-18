@@ -6,6 +6,24 @@ to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Added
+- **Odoo intervention PDF wiring — `fieldpilot_urdf.intervention`.** Bridges the
+  diagnostic report to the field PDF pipeline without the open core taking on
+  Gotenberg / Odoo dependencies or doing any I/O — it builds the request and
+  payload *data* the SaaS / n8n side sends:
+  - `gotenberg_request(html, …)` → a `GotenbergRequest` (the Chromium HTML→PDF
+    multipart, with `requests_kwargs()` ready for `requests`/`httpx`; A4/Letter,
+    margins, landscape, `printBackground`). The report HTML is self-contained, so
+    it ships as a single `index.html`.
+  - `intervention_attachment_vals(reference, pdf, res_id=…)` → the Odoo
+    `ir.attachment` create-values that file `rapport_{ref}.pdf` on the
+    `project.task`.
+  - `intervention_task_vals(report, pdf_url=…)` → the `project.task` write-values
+    mapping the diagnosis onto the documented intervention custom fields
+    (`x_intervention_ref`, `x_cause_probable`, `x_rapport_pdf_url`).
+  The example gains a step 10 SYNC showing the wiring offline; the illustrated
+  guide gains a "From report to the Odoo intervention PDF" section. Pure Python.
+
 ## [1.23.0] — 2026-06-18
 
 Wires the diagnostic report into the end-to-end example and ships **illustrated

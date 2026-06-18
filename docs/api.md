@@ -122,11 +122,16 @@ so an n8n / LLM front-end drives the loop)
 history into fault-frequency priors — feeding `candidates_from_scores` — and
 per-fix success statistics)
 
-**Diagnostic report** — `DiagnosticReport`, `ReportImage`, `photo_requests`,
-`attach_simulation_illustrations`, `build_simulation_illustrations`,
+**Diagnostic report** — `DiagnosticReport`, `ReportImage`, `SparePart`,
+`photo_requests`, `attach_simulation_illustrations`, `build_simulation_illustrations`,
 `render_report_html` (assemble a French HTML report from the diagnosis, the
-technician's photos, and — once confirmed — the rendered 3D / oscilloscope
-illustrations; ready for HTML→PDF)
+technician's photos, the spare-parts list, and — once confirmed — the rendered
+3D / oscilloscope illustrations; ready for HTML→PDF)
+
+**Odoo intervention wiring** — `gotenberg_request`, `GotenbergRequest`,
+`intervention_attachment_vals`, `intervention_task_vals` (build the Gotenberg
+HTML→PDF request and the Odoo `ir.attachment` / `project.task` payloads that file
+the report PDF on the intervention — pure data, the SaaS does the I/O)
 
 **Hypothesis-test** — `diagnose`, `Symptom`, `Hypothesis`, `Verdict`,
 `DiagnoseReport`

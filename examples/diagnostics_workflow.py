@@ -14,8 +14,9 @@ real call, fully offline and deterministic:
     7. Record       save_case — so the next diagnosis starts smarter                   (1.18)
     8. Show         3D fault-motion + oscilloscope traces (optional [viz] extra)        (1.19/1.20)
     9. Report       photos + illustrations + spare parts -> French HTML report          (1.22/1.23)
+   10. Sync         report -> Gotenberg PDF request + Odoo project.task payload          (1.24)
 
-    pip install fieldpilot-urdf            # steps 1–7, 9 (core)
+    pip install fieldpilot-urdf            # steps 1–7, 9, 10 (core)
     pip install "fieldpilot-urdf[viz]"     # + step 8 visuals & report illustrations
     python examples/diagnostics_workflow.py
 """
@@ -29,9 +30,10 @@ from typing import Optional
 from fieldpilot_urdf import (
     DiagnosticCase, DiagnosticReport, Joint, JointLimit, Link, Origin, PoseObservation,
     Question, Robot, SparePart, build_simulation_illustrations, calibrate_joint_offsets,
-    candidates_from_scores, fault_priors, forward_kinematics, list_cases, load_cases,
-    localize_joint_fault, next_question, photo_requests, recommend_solution,
-    render_report_html, save_case, update_beliefs,
+    candidates_from_scores, fault_priors, forward_kinematics, gotenberg_request,
+    intervention_task_vals, list_cases, load_cases, localize_joint_fault,
+    next_question, photo_requests, recommend_solution, render_report_html,
+    save_case, update_beliefs,
 )
 from fieldpilot_urdf.fk import R_to_rpy
 
@@ -222,6 +224,14 @@ def main(out_dir: Optional[Path] = None) -> dict:
     else:
         print(f"  rendered report HTML ({len(html)} chars) — pass out_dir to save")
 
+    # 10. Sync: the requests/payloads the SaaS sends to make the Odoo PDF.
+    banner("10. SYNC — report -> Gotenberg PDF -> Odoo intervention")
+    gb = gotenberg_request(html, filename=f"rapport_{report.reference}.pdf")
+    task_vals = intervention_task_vals(report, pdf_url="<set after upload>")
+    print(f"  Gotenberg: POST {gb.endpoint} -> {gb.output_filename}")
+    print(f"  Odoo project.task update: {task_vals}")
+    print("  (the SaaS/n8n executes these; the library only builds the payloads)")
+
     print("\n" + "=" * 74)
     print(f"  Diagnosed {resolved_fault} (offset {cal.offsets.get(resolved_fault, 0):+.3f} rad), "
           f"fix: {fix}.")
@@ -233,6 +243,8 @@ def main(out_dir: Optional[Path] = None) -> dict:
         "recommended": fix,
         "report_html": html,
         "report_path": str(report_path) if report_path else None,
+        "odoo_task_vals": task_vals,
+        "gotenberg_filename": gb.output_filename,
     }
 
 

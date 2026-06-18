@@ -76,6 +76,10 @@ from .report import (
     DiagnosticReport, ReportImage, SparePart, attach_simulation_illustrations,
     build_simulation_illustrations, photo_requests, render_report_html,
 )
+from .intervention import (
+    GotenbergRequest, gotenberg_request, intervention_attachment_vals,
+    intervention_task_vals,
+)
 
 __all__ = [
     "__version__",
@@ -114,4 +118,6 @@ __all__ = [
     "list_cases", "delete_case", "fault_priors", "solution_stats", "recommend_solution",
     "DiagnosticReport", "ReportImage", "SparePart", "photo_requests", "render_report_html",
     "build_simulation_illustrations", "attach_simulation_illustrations",
+    "GotenbergRequest", "gotenberg_request", "intervention_attachment_vals",
+    "intervention_task_vals",
 ]

@@ -40,9 +40,14 @@ def test_diagnostics_workflow_runs_end_to_end(tmp_path, capsys):
     assert "Pièces de rechange" in htmls and "recalibrate_encoder" in result["recommended"]
     assert (tmp_path / "rapport.html").exists()
 
+    # it built the Odoo intervention wiring (task field mapping + PDF filename)
+    assert result["odoo_task_vals"]["x_intervention_ref"] == "INT-2026-0042"
+    assert result["odoo_task_vals"]["x_cause_probable"] == mod.TRUE_FAULT
+    assert result["gotenberg_filename"] == "rapport_INT-2026-0042.pdf"
+
     # it printed the full narrative
     out = capsys.readouterr().out
-    assert "LOCALISE" in out and "DIALOG" in out and "REPORT" in out
+    assert "LOCALISE" in out and "DIALOG" in out and "REPORT" in out and "SYNC" in out
 
 
 @pytest.mark.skipif(importlib.util.find_spec("matplotlib") is None,
