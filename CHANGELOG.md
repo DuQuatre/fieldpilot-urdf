@@ -6,6 +6,21 @@ to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Added
+- **Collision-free inverse kinematics — `solve_ik_collision_free`.** Plain
+  `solve_ik` returns a pose-reaching configuration with no regard for collision —
+  it may self-collide or sit inside an obstacle, making it useless as, e.g., a
+  planning endpoint. The new solver enumerates the *distinct* IK branches (via
+  `solve_ik_multi` — elbow-up / elbow-down and other postures reaching the same
+  pose) and returns the best one that neither self-collides nor hits any
+  `obstacles` (the 1.13 world-obstacle type). Different postures collide
+  differently, so this picks the one that's clear — and its output drops straight
+  into `plan_path` as a valid start/goal. Returns the existing `IKResult`:
+  `converged=True` means a collision-free pose-reaching solution was found; if the
+  pose is reachable only in collision, the best colliding configuration is
+  returned with `converged=False` and a message saying so. Composes IK (1.6) ×
+  self-collision × obstacles (1.13); pure reuse, additive.
+
 ## [1.15.0] — 2026-06-18
 
 Generalizes 1.14's single-pose localizer to **multi-pose calibration**.
