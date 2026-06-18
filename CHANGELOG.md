@@ -6,6 +6,15 @@ to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [1.22.0] — 2026-06-18
+
+Adds **diagnostic report assembly**. `fieldpilot_urdf.report` bundles a diagnosis,
+the technician's photos (`photo_requests` says which to ask for), and — once the
+fault is confirmed — the simulation's 3D / oscilloscope illustrations into a
+self-contained French HTML report ready for HTML→PDF. Models + HTML are
+pure-Python core; only illustration generation uses the `[viz]` extra, lazily.
+No breaking changes; additive over the 1.21 public API. 418 tests.
+
 ### Added
 - **Diagnostic report assembly — `fieldpilot_urdf.report`.** Bundle a diagnosis,
   the technician's photos, and the simulation's illustrations into a
@@ -775,6 +784,7 @@ standalone, pure-Python, pip-installable package (AGPL-3.0).
   spare-parts BOM, and multi-tenant hosting are **not** part of this package —
   they live in FieldPilot SaaS.
 
+[1.22.0]: https://github.com/DuQuatre/fieldpilot-urdf/releases/tag/v1.22.0
 [1.21.0]: https://github.com/DuQuatre/fieldpilot-urdf/releases/tag/v1.21.0
 [1.20.0]: https://github.com/DuQuatre/fieldpilot-urdf/releases/tag/v1.20.0
 [1.19.0]: https://github.com/DuQuatre/fieldpilot-urdf/releases/tag/v1.19.0
