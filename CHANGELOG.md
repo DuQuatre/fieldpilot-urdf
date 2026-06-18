@@ -6,6 +6,17 @@ to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [1.17.0] — 2026-06-18
+
+Opens an **interactive** diagnostics direction. When several faults could explain
+a symptom, the new `fieldpilot_urdf.differential_diagnosis` engine narrows them
+by asking the technician the most discriminating question (highest information
+gain) and Bayesian-updating the candidate posterior as answers arrive — the
+"twenty questions" loop, with the maths kept stateless so an n8n / LLM front-end
+owns the dialog. Pure Python. First of a planned series (case statistics, then
+3D / oscilloscope visuals). No breaking changes; additive over the 1.16 public
+API. 381 tests.
+
 ### Added
 - **Differential-diagnosis dialog engine — `fieldpilot_urdf.differential_diagnosis`.**
   When several faults could explain a symptom, narrow them by asking the
@@ -649,6 +660,7 @@ standalone, pure-Python, pip-installable package (AGPL-3.0).
   spare-parts BOM, and multi-tenant hosting are **not** part of this package —
   they live in FieldPilot SaaS.
 
+[1.17.0]: https://github.com/DuQuatre/fieldpilot-urdf/releases/tag/v1.17.0
 [1.16.0]: https://github.com/DuQuatre/fieldpilot-urdf/releases/tag/v1.16.0
 [1.15.0]: https://github.com/DuQuatre/fieldpilot-urdf/releases/tag/v1.15.0
 [1.14.0]: https://github.com/DuQuatre/fieldpilot-urdf/releases/tag/v1.14.0
