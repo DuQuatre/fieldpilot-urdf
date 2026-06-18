@@ -6,6 +6,15 @@ to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [1.18.0] — 2026-06-18
+
+Second slice of the interactive diagnostics direction: a **case knowledge base**.
+`fieldpilot_urdf.case_base` persists each resolved diagnosis and mines the
+history into fault-frequency priors and per-fix success statistics — the priors
+feed the 1.17 differential-diagnosis engine, so the dialog starts each new case
+from what the fleet has actually shown and sharpens with use. Pure Python. No
+breaking changes; additive over the 1.17 public API. 392 tests.
+
 ### Added
 - **Diagnostic case knowledge base — `fieldpilot_urdf.case_base`.** Remember
   every resolved diagnosis (symptom, questions/answers, the confirmed fault, the
@@ -680,6 +689,7 @@ standalone, pure-Python, pip-installable package (AGPL-3.0).
   spare-parts BOM, and multi-tenant hosting are **not** part of this package —
   they live in FieldPilot SaaS.
 
+[1.18.0]: https://github.com/DuQuatre/fieldpilot-urdf/releases/tag/v1.18.0
 [1.17.0]: https://github.com/DuQuatre/fieldpilot-urdf/releases/tag/v1.17.0
 [1.16.0]: https://github.com/DuQuatre/fieldpilot-urdf/releases/tag/v1.16.0
 [1.15.0]: https://github.com/DuQuatre/fieldpilot-urdf/releases/tag/v1.15.0
