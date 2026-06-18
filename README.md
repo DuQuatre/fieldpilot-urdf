@@ -90,6 +90,17 @@ print(detect_self_collisions(robot))                    # [(link_a, link_b), ...
 `sample_workspace` and `check_trajectory` round out the layer — reachable
 envelope and a per-step limit/collision check along a path.
 
+**Planning around the world**, not just the robot: pass `obstacles` and the
+planner routes around them (and `check_trajectory` flags any that are hit).
+
+```python
+from fieldpilot_urdf import plan_path, box_obstacle
+
+wall = box_obstacle("wall", center=(1.0, 0.0, 0.5), size=(0.3, 2.0, 1.0))
+res = plan_path(robot, start, goal, obstacles=[wall])    # RRT-Connect, obstacle-aware
+print(res.success, res.n_waypoints)                      # detours around the wall
+```
+
 **Velocity kinematics** sits between FK and IK: the geometric Jacobian maps joint
 velocities to the end-effector twist, and from it you read off dexterity and
 proximity to a singularity.

@@ -6,6 +6,27 @@ to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Added
+- **Environment collision + obstacle-aware planning.** Until now all collision
+  checking was *self*-collision; the robot could be planned only against itself,
+  never the world. New world-obstacle support in `fieldpilot_urdf.collisions`:
+  - **`Obstacle`** — a static world-frame axis-aligned box, built with
+    **`box_obstacle(name, center, size)`** or **`sphere_obstacle(name, center,
+    radius)`** (the sphere bounded by its enclosing AABB, matching the module's
+    AABB-only model), or directly from world `lower` / `upper` corners.
+  - **`detect_obstacle_collisions(robot, obstacles, q=…)`** — the world-collision
+    counterpart of `detect_self_collisions`; returns the overlapping
+    `(link_name, obstacle_name)` pairs. Takes a `tol` to inflate the test.
+
+### Changed
+- **`plan_path`, `shorten_path`, and `check_trajectory` gain an `obstacles=`
+  argument.** Pass a list of `Obstacle` and the planner routes around the world
+  (every config and edge is checked against the obstacles as well as for
+  self-collision), short-cutting respects them, and trajectory validation flags
+  per-step obstacle hits (`code="collision"`, detail says obstacle). With
+  `obstacles=None` (default) behaviour — and the self-collision failure messages —
+  are byte-for-byte unchanged. Fully additive.
+
 ## [1.12.0] — 2026-06-18
 
 Adds **trajectory time-parameterization**. The planners (`plan_path`,

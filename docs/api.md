@@ -65,6 +65,12 @@ measure on a sub-6-DoF arm)
 `link_collision_aabbs`, `transform_aabb`, `MeshResolver`, `clear_mesh_cache`,
 `unresolved_meshes`
 
+**Environment collision** — `Obstacle`, `box_obstacle`, `sphere_obstacle`,
+`detect_obstacle_collisions` (static world-frame AABB obstacles; the
+world-collision counterpart of `detect_self_collisions`. `plan_path`,
+`shorten_path`, and `check_trajectory` take an `obstacles=` list to plan /
+validate against the world, not just the robot itself)
+
 **Mesh bounds** — `read_mesh_bounds`, `SUPPORTED_FORMATS` (pure-Python vertex
 AABB for `.stl` / `.obj` / `.ply` — no `[mesh]` extra; mesh self-collision uses
 this and falls back to `trimesh` only for other formats like `.dae`)

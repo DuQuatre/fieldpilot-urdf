@@ -25,7 +25,9 @@ from typing import Optional
 import numpy as np
 from pydantic import BaseModel
 
-from .collisions import MeshResolver, detect_self_collisions
+from .collisions import (
+    MeshResolver, Obstacle, detect_obstacle_collisions, detect_self_collisions,
+)
 from .models import Joint, Robot
 
 
@@ -103,16 +105,22 @@ def _config_free(
     joints: list[Joint],
     check_collisions: bool,
     mesh_resolver: Optional[MeshResolver],
+    obstacles: Optional[list[Obstacle]] = None,
 ) -> bool:
-    """A config is feasible if it doesn't self-collide. Joint limits are
-    enforced by construction (samples + steering stay within bounds), so we
-    only need the collision query here.
+    """A config is feasible if it doesn't self-collide and (when ``obstacles``
+    are given) doesn't hit any of them. Joint limits are enforced by construction
+    (samples + steering stay within bounds), so we only need the collision query.
     """
     if not check_collisions:
         return True
     q = _to_dict(vec, joints)
     try:
-        return not detect_self_collisions(robot, q=q, mesh_resolver=mesh_resolver)
+        if detect_self_collisions(robot, q=q, mesh_resolver=mesh_resolver):
+            return False
+        if obstacles and detect_obstacle_collisions(
+                robot, obstacles, q=q, mesh_resolver=mesh_resolver):
+            return False
+        return True
     except ValueError:
         # Not single-rooted — FK/collisions undefined; treat as blocked so the
         # planner fails cleanly rather than emitting a bogus path.
@@ -128,10 +136,11 @@ def _edge_free(
     step_size: float,
     check_collisions: bool,
     mesh_resolver: Optional[MeshResolver],
+    obstacles: Optional[list[Obstacle]] = None,
 ) -> bool:
     """Densely sample the straight segment a→b (in wrapped joint space) and
-    reject if any interior config self-collides. Endpoint `a` is assumed already
-    validated by the caller; `b` is checked here.
+    reject if any interior config self-collides or hits an obstacle. Endpoint `a`
+    is assumed already validated by the caller; `b` is checked here.
     """
     if not check_collisions:
         return True
@@ -140,7 +149,7 @@ def _edge_free(
     n = max(1, int(math.ceil(dist / step_size)))
     for i in range(1, n + 1):
         vec = a + d * (i / n)
-        if not _config_free(robot, vec, joints, check_collisions, mesh_resolver):
+        if not _config_free(robot, vec, joints, check_collisions, mesh_resolver, obstacles):
             return False
     return True
 
@@ -194,6 +203,7 @@ def _extend(
     tree: _Tree, target: np.ndarray, robot: Robot, joints: list[Joint],
     is_continuous: np.ndarray, step_size: float,
     check_collisions: bool, mesh_resolver: Optional[MeshResolver],
+    obstacles: Optional[list[Obstacle]] = None,
 ) -> tuple[str, int]:
     """Grow `tree` one step toward `target`. Returns ("trapped"|"advanced"|
     "reached", new_node_index). "reached" means the new node coincides with
@@ -202,7 +212,7 @@ def _extend(
     near_i = tree.nearest(target, is_continuous)
     new_vec = _steer(tree.nodes[near_i], target, is_continuous, step_size)
     if not _edge_free(robot, tree.nodes[near_i], new_vec, joints, is_continuous,
-                      step_size, check_collisions, mesh_resolver):
+                      step_size, check_collisions, mesh_resolver, obstacles):
         return "trapped", near_i
     new_i = tree.add(new_vec, near_i)
     reached = _dist(new_vec, target, is_continuous) <= 1e-9
@@ -213,13 +223,14 @@ def _connect(
     tree: _Tree, target: np.ndarray, robot: Robot, joints: list[Joint],
     is_continuous: np.ndarray, step_size: float,
     check_collisions: bool, mesh_resolver: Optional[MeshResolver],
+    obstacles: Optional[list[Obstacle]] = None,
 ) -> tuple[str, int]:
     """Repeatedly extend `tree` toward `target` until it reaches it or gets
     trapped (RRT-Connect's greedy connect heuristic)."""
     status, idx = "advanced", -1
     while status == "advanced":
         status, idx = _extend(tree, target, robot, joints, is_continuous,
-                              step_size, check_collisions, mesh_resolver)
+                              step_size, check_collisions, mesh_resolver, obstacles)
     return status, idx
 
 
@@ -233,6 +244,7 @@ def plan_path(
     seed: Optional[int] = None,
     check_collisions: bool = True,
     mesh_resolver: Optional[MeshResolver] = None,
+    obstacles: Optional[list[Obstacle]] = None,
     smooth: bool = True,
 ) -> PlanResult:
     """Plan a collision-free joint-space path from `start` to `goal`.
@@ -243,10 +255,15 @@ def plan_path(
     collision-free at `step_size` resolution and, unless ``smooth=False``,
     short-cut via :func:`shorten_path`.
 
+    Pass ``obstacles`` (a list of :class:`...collisions.Obstacle`) to plan around
+    the world, not just the robot itself: every config and edge is then checked
+    against those world AABBs as well as for self-collision. With ``obstacles=None``
+    (default) the behaviour is exactly the self-collision planner as before.
+
     `start`/`goal` must give a value for every movable joint (missing joints
-    default to 0.0). Both endpoints are validated up front: if either
-    self-collides the planner fails immediately with an explanatory message.
-    `max_iters` bounds the tree-extension attempts before giving up.
+    default to 0.0). Both endpoints are validated up front: if either collides
+    (with itself or an obstacle) the planner fails immediately with an
+    explanatory message. `max_iters` bounds the tree-extension attempts.
     """
     joints = _planning_joints(robot)
     if not joints:
@@ -273,16 +290,17 @@ def plan_path(
             return PlanResult(success=False, n_iter=0, n_waypoints=0,
                               path=[], message=f"{label} out of joint limits: {bad}")
 
-    if not _config_free(robot, s_vec, joints, check_collisions, mesh_resolver):
+    _coll = "collides (self or obstacle)" if obstacles else "self-collides"
+    if not _config_free(robot, s_vec, joints, check_collisions, mesh_resolver, obstacles):
         return PlanResult(success=False, n_iter=0, n_waypoints=0, path=[],
-                          message="start configuration self-collides")
-    if not _config_free(robot, g_vec, joints, check_collisions, mesh_resolver):
+                          message=f"start configuration {_coll}")
+    if not _config_free(robot, g_vec, joints, check_collisions, mesh_resolver, obstacles):
         return PlanResult(success=False, n_iter=0, n_waypoints=0, path=[],
-                          message="goal configuration self-collides")
+                          message=f"goal configuration {_coll}")
 
     # Trivial case: a single collision-free edge already connects them.
     if _edge_free(robot, s_vec, g_vec, joints, is_continuous, step_size,
-                  check_collisions, mesh_resolver):
+                  check_collisions, mesh_resolver, obstacles):
         path = [_to_dict(s_vec, joints), _to_dict(g_vec, joints)]
         return PlanResult(success=True, n_iter=0, n_waypoints=len(path), path=path,
                           message="connected directly (no obstacle between endpoints)")
@@ -295,12 +313,12 @@ def plan_path(
     for it in range(1, max_iters + 1):
         rand = lo + rng.random(len(joints)) * (hi - lo)
         status, new_i = _extend(tree_a, rand, robot, joints, is_continuous,
-                                step_size, check_collisions, mesh_resolver)
+                                step_size, check_collisions, mesh_resolver, obstacles)
         if status != "trapped":
             # Try to connect the other tree to tree_a's new node.
             cstatus, other_i = _connect(
                 tree_b, tree_a.nodes[new_i], robot, joints, is_continuous,
-                step_size, check_collisions, mesh_resolver)
+                step_size, check_collisions, mesh_resolver, obstacles)
             if cstatus == "reached":
                 # Stitch: start-side leaf..root + goal-side root..leaf.
                 branch_a = tree_a.path_to_root(new_i)        # new -> root_a
@@ -313,7 +331,7 @@ def plan_path(
                 if smooth:
                     path_vecs = _shorten_vecs(
                         robot, path_vecs, joints, is_continuous, step_size,
-                        check_collisions, mesh_resolver, rng)
+                        check_collisions, mesh_resolver, rng, obstacles=obstacles)
                 path = [_to_dict(v, joints) for v in path_vecs]
                 return PlanResult(success=True, n_iter=it, n_waypoints=len(path),
                                   path=path, message="path found")
@@ -332,6 +350,7 @@ def _shorten_vecs(
     is_continuous: np.ndarray, step_size: float, check_collisions: bool,
     mesh_resolver: Optional[MeshResolver], rng: np.random.Generator,
     n_iters: int = 100,
+    obstacles: Optional[list[Obstacle]] = None,
 ) -> list[np.ndarray]:
     """Greedy random short-cutting: repeatedly pick two waypoints and, if the
     straight segment between them is collision-free, drop everything in between.
@@ -348,7 +367,7 @@ def _shorten_vecs(
         if j - i <= 1:
             continue  # already adjacent
         if _edge_free(robot, path[i], path[j], joints, is_continuous, step_size,
-                      check_collisions, mesh_resolver):
+                      check_collisions, mesh_resolver, obstacles):
             path = path[: i + 1] + path[j:]
     return path
 
@@ -361,13 +380,15 @@ def shorten_path(
     seed: Optional[int] = None,
     check_collisions: bool = True,
     mesh_resolver: Optional[MeshResolver] = None,
+    obstacles: Optional[list[Obstacle]] = None,
     n_iters: int = 100,
 ) -> list[dict[str, float]]:
     """Shorten a waypoint path by greedily short-cutting collision-free pairs.
 
     Safe to call on any path of movable-joint configs (e.g. straight from
     :func:`plan_path` with ``smooth=False``, or a hand-built one). Returns a new
-    list; the input is untouched. Endpoints are preserved.
+    list; the input is untouched. Endpoints are preserved. Pass ``obstacles`` so
+    short-cuts respect the world, not just self-collision.
     """
     joints = _planning_joints(robot)
     if not joints or len(path) <= 2:
@@ -376,7 +397,8 @@ def shorten_path(
     vecs = [_to_vec({**{j.name: 0.0 for j in joints}, **q}, joints) for q in path]
     rng = np.random.default_rng(seed)
     out = _shorten_vecs(robot, vecs, joints, is_continuous, step_size,
-                        check_collisions, mesh_resolver, rng, n_iters=n_iters)
+                        check_collisions, mesh_resolver, rng, n_iters=n_iters,
+                        obstacles=obstacles)
     return [_to_dict(v, joints) for v in out]
 
 
