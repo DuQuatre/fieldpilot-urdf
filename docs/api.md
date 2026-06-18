@@ -103,6 +103,12 @@ feeds `check_trajectory` and the result mirrors `simulate.Trajectory`)
 link's observed vs. commanded pose, rank the chain's joints by how well a single
 calibration offset on each explains the deviation, via the geometric Jacobian)
 
+**Calibrate (kinematic)** — `calibrate_joint_offsets`, `PoseObservation`,
+`CalibrationResult` (multi-pose generalization: from a set of commanded/observed
+pose measurements, estimate the per-joint calibration offsets that explain them
+all, via Gauss-Newton — resolves the ambiguity one pose can't and handles large
+offsets)
+
 **Hypothesis-test** — `diagnose`, `Symptom`, `Hypothesis`, `Verdict`,
 `DiagnoseReport`
 

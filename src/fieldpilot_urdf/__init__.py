@@ -60,7 +60,10 @@ from .retime import TimedTrajectory, time_parameterize
 from .fault_propagation import (
     RootCauseCandidate, affected_links, criticality, rank_root_causes,
 )
-from .kinematic_diagnosis import JointFaultCandidate, localize_joint_fault
+from .kinematic_diagnosis import (
+    CalibrationResult, JointFaultCandidate, PoseObservation,
+    calibrate_joint_offsets, localize_joint_fault,
+)
 
 __all__ = [
     "__version__",
@@ -92,4 +95,5 @@ __all__ = [
     "resolve_includes_local", "substitute_find",
     "RootCauseCandidate", "affected_links", "criticality", "rank_root_causes",
     "localize_joint_fault", "JointFaultCandidate",
+    "calibrate_joint_offsets", "PoseObservation", "CalibrationResult",
 ]

@@ -6,6 +6,24 @@ to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Added
+- **Multi-pose kinematic calibration — `calibrate_joint_offsets`.** The
+  multi-pose generalization of 1.14's `localize_joint_fault`, in
+  `fieldpilot_urdf.kinematic_diagnosis`. Given a *set* of `PoseObservation`s
+  (each a commanded configuration paired with where the link was actually
+  measured), it estimates the per-joint calibration offsets that best explain
+  **all** of them at once — jointly resolving the ambiguity a single pose can't.
+  A **Gauss-Newton** iteration (re-evaluating FK and the Jacobian each step, and
+  solving the stacked least-squares system `A·Δδ = b` over every sample's
+  Jacobian / residual twist) recovers *large* offsets, not just the small-signal
+  regime of `localize_joint_fault`. Position-only observations (no
+  `observed_rpy`) contribute position rows only; `orientation_weight` balances
+  the mixed metre/radian metric. Returns a `CalibrationResult` — the per-joint
+  `offsets` plus position / orientation RMS pose error before and after, and
+  `iterations` / `converged`. Only the chain joints to the link are observable
+  and calibrated; with too few poses the system is underdetermined and the
+  minimum-norm offset is returned (add varied poses to pin it down). Pure NumPy.
+
 ## [1.14.0] — 2026-06-18
 
 Brings the kinematics toolkit to the **diagnostics** layer. Every diagnostics
