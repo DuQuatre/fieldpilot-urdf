@@ -6,6 +6,15 @@ to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [1.15.0] — 2026-06-18
+
+Generalizes 1.14's single-pose localizer to **multi-pose calibration**.
+`calibrate_joint_offsets` (in `fieldpilot_urdf.kinematic_diagnosis`) takes a set
+of commanded/observed link poses and jointly estimates the per-joint calibration
+offsets that explain them all — resolving the ambiguity a single pose can't, and
+via Gauss-Newton recovering large offsets, not just the small-signal regime.
+Pure NumPy. No breaking changes; additive over the 1.14 public API. 361 tests.
+
 ### Added
 - **Multi-pose kinematic calibration — `calibrate_joint_offsets`.** The
   multi-pose generalization of 1.14's `localize_joint_fault`, in
@@ -597,6 +606,7 @@ standalone, pure-Python, pip-installable package (AGPL-3.0).
   spare-parts BOM, and multi-tenant hosting are **not** part of this package —
   they live in FieldPilot SaaS.
 
+[1.15.0]: https://github.com/DuQuatre/fieldpilot-urdf/releases/tag/v1.15.0
 [1.14.0]: https://github.com/DuQuatre/fieldpilot-urdf/releases/tag/v1.14.0
 [1.13.0]: https://github.com/DuQuatre/fieldpilot-urdf/releases/tag/v1.13.0
 [1.12.0]: https://github.com/DuQuatre/fieldpilot-urdf/releases/tag/v1.12.0
