@@ -142,6 +142,25 @@ report URL filled in.
 
 ---
 
+## Back to the technician on Telegram
+
+The loop closes in the tech's chat. `telegram_messages` builds the bot's replies
+— the French summary, then each illustration (the 3D GIF as `sendAnimation`, the
+scope PNG as `sendPhoto`), and the PDF as `sendDocument`:
+
+```python
+from fieldpilot_urdf import telegram_messages
+
+for msg in telegram_messages(report, chat_id=tech_chat_id, pdf=pdf):
+    requests.post(f"https://api.telegram.org/bot{TOKEN}/{msg.method}", **msg.requests_kwargs())
+```
+
+The tech receives, in French: *✅ Diagnostic confirmé — Défaut : j_shoulder —
+Confiance : 97 % — Solution : recalibrate_encoder — Pièces : …*, followed by the
+3D motion and the scope trace to compare against the robot in front of them.
+
+---
+
 ## Run it yourself
 
 ```bash
