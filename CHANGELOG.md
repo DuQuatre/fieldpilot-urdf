@@ -6,6 +6,23 @@ to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Added
+- **SPA spare-parts order wiring — `fieldpilot_urdf.spare_parts`.** Turns a
+  confirmed report's spare parts into the SPA module's Odoo order. As with the
+  other integrations, the open core builds the JSON-RPC payload, the SaaS creates
+  the record:
+  - `spare_parts_order_vals(report, partner_id=…, product_map=…)` → the Odoo
+    `sale.order` create-values (customer, `origin` = the intervention reference,
+    and the order lines).
+  - `spare_parts_order_lines(parts, product_map=…)` → the `sale.order.line`
+    command tuples; a part is matched to a catalogue product via
+    `{reference: product_id}`, and falls back to a description-only line when
+    unmapped.
+  - `unresolved_part_refs(parts, product_map)` → the references with no product
+    yet, so the caller knows what to create in Odoo first.
+  The example gains a step 12 ORDER; the guide gains a "Spare parts to an Odoo SPA
+  order" section. Pure Python.
+
 ## [1.25.0] — 2026-06-18
 
 Closes the field loop in the **technician's Telegram chat**. The new

@@ -161,6 +161,24 @@ Confiance : 97 % — Solution : recalibrate_encoder — Pièces : …*, followed
 
 ---
 
+## Spare parts to an Odoo SPA order
+
+The fix's parts become an order in the SPA module — an Odoo `sale.order` linked
+to the intervention. `spare_parts_order_vals` builds the create-values; a
+`{reference: product_id}` map resolves known parts to catalogue products, and
+`unresolved_part_refs` flags any that still need creating:
+
+```python
+from fieldpilot_urdf import spare_parts_order_vals, unresolved_part_refs
+
+order = spare_parts_order_vals(report, partner_id=client_id, product_map={"ENC-1024": 1001})
+#  -> {'partner_id': …, 'origin': 'INT-2026-0042',
+#      'order_line': [(0, 0, {'product_id': 1001, 'product_uom_qty': 1, 'name': 'ENC-1024 — …'}), …]}
+todo = unresolved_part_refs(report.spare_parts, {"ENC-1024": 1001})   # ['CAL-KIT']
+```
+
+---
+
 ## Run it yourself
 
 ```bash
