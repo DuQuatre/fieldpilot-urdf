@@ -6,6 +6,16 @@ to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [1.16.0] — 2026-06-18
+
+Makes inverse kinematics **collision-aware**. `solve_ik` ignores collision
+entirely — it can return a pose-reaching configuration that self-collides or
+sits inside an obstacle. The new `solve_ik_collision_free` enumerates the
+distinct IK branches and returns the one that's actually usable: self-collision
+free and clear of the 1.13 world obstacles — a valid `plan_path` endpoint.
+Composes IK, self-collision, and obstacles; pure reuse. No breaking changes;
+additive over the 1.15 public API. 367 tests.
+
 ### Added
 - **Collision-free inverse kinematics — `solve_ik_collision_free`.** Plain
   `solve_ik` returns a pose-reaching configuration with no regard for collision —
@@ -621,6 +631,7 @@ standalone, pure-Python, pip-installable package (AGPL-3.0).
   spare-parts BOM, and multi-tenant hosting are **not** part of this package —
   they live in FieldPilot SaaS.
 
+[1.16.0]: https://github.com/DuQuatre/fieldpilot-urdf/releases/tag/v1.16.0
 [1.15.0]: https://github.com/DuQuatre/fieldpilot-urdf/releases/tag/v1.15.0
 [1.14.0]: https://github.com/DuQuatre/fieldpilot-urdf/releases/tag/v1.14.0
 [1.13.0]: https://github.com/DuQuatre/fieldpilot-urdf/releases/tag/v1.13.0
