@@ -246,6 +246,25 @@ print(cal.offsets)                                   # {joint: estimated offset}
 print(cal.position_rms_before, "->", cal.position_rms_after)   # error collapses
 ```
 
+When several faults still compete, **narrow by dialog** — ask the technician the
+*most discriminating* question (highest information gain) and fold the answer
+back in, turn by turn, until one fault dominates. Stateless, so the bot/LLM owns
+the conversation:
+
+```python
+from fieldpilot_urdf import Candidate, Question, rank_questions, update_beliefs
+
+candidates = [Candidate(name="motor_dead"), Candidate(name="backlash")]
+questions = [Question(id="hold", text="Does the joint hold position under load?",
+                      outcomes=["yes", "no"],
+                      likelihoods={"motor_dead": {"yes": 0.0, "no": 1.0},
+                                   "backlash":   {"yes": 0.9, "no": 0.1}})]
+
+print(rank_questions(candidates, questions)[0].info_gain)     # ~1 bit: ask this first
+state = update_beliefs(candidates, questions, {"hold": "no"}) # tech answers
+print(state.leading, round(state.leading_prob, 2), state.resolved)  # motor_dead 1.0 True
+```
+
 Then **prove it** — inject the hypothesis on a copy, re-test, and confirm or
 refute. The ranked suspect feeds straight into `diagnose` as the hypothesis:
 

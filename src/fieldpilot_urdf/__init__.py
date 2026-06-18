@@ -64,6 +64,10 @@ from .kinematic_diagnosis import (
     CalibrationResult, JointFaultCandidate, PoseObservation,
     calibrate_joint_offsets, localize_joint_fault,
 )
+from .differential_diagnosis import (
+    BeliefState, Candidate, Question, QuestionScore, candidates_from_scores,
+    next_question, rank_questions, update_beliefs,
+)
 
 __all__ = [
     "__version__",
@@ -96,4 +100,6 @@ __all__ = [
     "RootCauseCandidate", "affected_links", "criticality", "rank_root_causes",
     "localize_joint_fault", "JointFaultCandidate",
     "calibrate_joint_offsets", "PoseObservation", "CalibrationResult",
+    "Candidate", "Question", "QuestionScore", "BeliefState",
+    "rank_questions", "next_question", "update_beliefs", "candidates_from_scores",
 ]

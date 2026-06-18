@@ -6,6 +6,24 @@ to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Added
+- **Differential-diagnosis dialog engine — `fieldpilot_urdf.differential_diagnosis`.**
+  When several faults could explain a symptom, narrow them by asking the
+  technician the *most discriminating* question. Given competing `Candidate`
+  hypotheses (with priors — seed them from `rank_root_causes` /
+  `localize_joint_fault` via `candidates_from_scores`) and a set of `Question`s
+  (each with the predicted outcome likelihood per candidate), `rank_questions`
+  scores every unanswered question by **expected information gain** (mutual
+  information, bits) — a perfectly discriminating yes/no on a 50/50 pair scores
+  ~1 bit, an uninformative one ~0 — and `update_beliefs` Bayesian-updates the
+  posterior over candidates as answers arrive (an impossible outcome drives a
+  candidate to zero). `next_question` returns the single best one; `BeliefState`
+  reports the posterior, entropy, leading candidate, and whether it's `resolved`
+  (leading probability past a threshold). The engine is **stateless** — every
+  call is a pure function of `(candidates, questions, answers-so-far)` — so an
+  n8n / LLM front-end owns the dialog and persistence while this owns the maths.
+  Naive-Bayes independence across questions. Pure Python, core install.
+
 ## [1.16.0] — 2026-06-18
 
 Makes inverse kinematics **collision-aware**. `solve_ik` ignores collision
