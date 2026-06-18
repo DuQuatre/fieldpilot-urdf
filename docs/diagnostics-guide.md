@@ -120,6 +120,28 @@ Gotenberg to turn into the intervention PDF.
 
 ---
 
+## From report to the Odoo intervention PDF
+
+The library doesn't call Gotenberg or Odoo (the open core stays service-free) —
+it builds the exact requests the SaaS/n8n side sends:
+
+```python
+from fieldpilot_urdf import gotenberg_request, intervention_attachment_vals, intervention_task_vals
+
+req = gotenberg_request(html, filename="rapport_INT-2026-0042.pdf")  # HTML -> PDF via Gotenberg
+pdf = requests.post(base + req.endpoint, **req.requests_kwargs()).content
+
+att  = intervention_attachment_vals("INT-2026-0042", pdf, res_id=task_id)  # ir.attachment
+task = intervention_task_vals(report, pdf_url=attachment_url)              # project.task fields
+#  -> {'x_intervention_ref': 'INT-2026-0042', 'x_cause_probable': 'j_shoulder',
+#      'x_rapport_pdf_url': '/web/content/…'}
+```
+
+The PDF lands on the `project.task` intervention with the diagnosed cause and the
+report URL filled in.
+
+---
+
 ## Run it yourself
 
 ```bash
