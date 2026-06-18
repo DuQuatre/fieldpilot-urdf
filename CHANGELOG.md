@@ -6,6 +6,15 @@ to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [1.24.0] — 2026-06-18
+
+Wires the diagnostic report into the **Odoo intervention PDF** pipeline. The new
+`fieldpilot_urdf.intervention` module builds the Gotenberg HTML→PDF request and
+the Odoo `ir.attachment` / `project.task` payloads that file the report PDF on
+the intervention — as pure data, so the open core stays free of Gotenberg / Odoo
+dependencies and network I/O. No breaking changes; additive over the 1.23 public
+API. 428 tests.
+
 ### Added
 - **Odoo intervention PDF wiring — `fieldpilot_urdf.intervention`.** Bridges the
   diagnostic report to the field PDF pipeline without the open core taking on
@@ -827,6 +836,7 @@ standalone, pure-Python, pip-installable package (AGPL-3.0).
   spare-parts BOM, and multi-tenant hosting are **not** part of this package —
   they live in FieldPilot SaaS.
 
+[1.24.0]: https://github.com/DuQuatre/fieldpilot-urdf/releases/tag/v1.24.0
 [1.23.0]: https://github.com/DuQuatre/fieldpilot-urdf/releases/tag/v1.23.0
 [1.22.0]: https://github.com/DuQuatre/fieldpilot-urdf/releases/tag/v1.22.0
 [1.21.0]: https://github.com/DuQuatre/fieldpilot-urdf/releases/tag/v1.21.0
