@@ -110,6 +110,12 @@ pose measurements, estimate the per-joint calibration offsets that explain them
 all, via Gauss-Newton — resolves the ambiguity one pose can't and handles large
 offsets)
 
+**Differential dialog** — `rank_questions`, `next_question`, `update_beliefs`,
+`candidates_from_scores`, `Candidate`, `Question`, `QuestionScore`, `BeliefState`
+(when several faults compete, rank the most discriminating next question by
+information gain and Bayesian-update the posterior as the tech answers; stateless,
+so an n8n / LLM front-end drives the loop)
+
 **Hypothesis-test** — `diagnose`, `Symptom`, `Hypothesis`, `Verdict`,
 `DiagnoseReport`
 
