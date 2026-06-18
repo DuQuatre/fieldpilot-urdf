@@ -6,6 +6,16 @@ to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [1.12.0] — 2026-06-18
+
+Adds **trajectory time-parameterization**. The planners (`plan_path`,
+`plan_cartesian_path`) produce *geometric* paths with no timing; the new
+`fieldpilot_urdf.retime` module assigns a path a schedule that respects the
+joints' velocity limits, turning waypoints into motion over time — the bridge
+from a kinematic path to executable motion, feeding the dynamics / simulation
+layer. Pure NumPy (no scipy). No breaking changes; additive over the 1.11
+public API. 336 tests.
+
 ### Added
 - **Trajectory time-parameterization — `time_parameterize`.** New
   `fieldpilot_urdf.retime` module: the bridge from a *geometric* path to an
@@ -510,6 +520,7 @@ standalone, pure-Python, pip-installable package (AGPL-3.0).
   spare-parts BOM, and multi-tenant hosting are **not** part of this package —
   they live in FieldPilot SaaS.
 
+[1.12.0]: https://github.com/DuQuatre/fieldpilot-urdf/releases/tag/v1.12.0
 [1.11.0]: https://github.com/DuQuatre/fieldpilot-urdf/releases/tag/v1.11.0
 [1.10.0]: https://github.com/DuQuatre/fieldpilot-urdf/releases/tag/v1.10.0
 [1.9.0]: https://github.com/DuQuatre/fieldpilot-urdf/releases/tag/v1.9.0
