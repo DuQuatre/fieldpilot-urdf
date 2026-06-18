@@ -6,6 +6,19 @@ to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Added
+- **End-to-end diagnostics example — `examples/diagnostics_workflow.py`.** A
+  runnable, offline, deterministic walkthrough of the whole Layer-4 loop on a
+  robot with one miscalibrated joint: **symptom** (tool measured off the
+  commanded pose) → **localise** (`localize_joint_fault`) → **prior** from past
+  cases (`fault_priors`) → **dialog** (`rank_questions` / `update_beliefs` narrow
+  to one fault) → **calibrate** (`calibrate_joint_offsets` recovers the exact
+  offset) → **recommend** (`recommend_solution`) → **record** (`save_case`) →
+  **visualise** (3D fault-motion GIF + oscilloscope PNG, when `[viz]` is
+  installed). Every number comes from a real call. Covered by a smoke test
+  (`tests/test_example_diagnostics.py`) so it stays runnable. Ties together the
+  1.14–1.20 diagnostics features into one reference workflow.
+
 ## [1.20.0] — 2026-06-18
 
 Final slice of the interactive diagnostics direction: **oscilloscope parameter
