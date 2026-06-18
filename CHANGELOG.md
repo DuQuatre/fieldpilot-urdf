@@ -4,7 +4,14 @@ All notable changes to `fieldpilot-urdf` are documented here. Format follows
 [Keep a Changelog](https://keepachangelog.com/), and the project aims to adhere
 to [Semantic Versioning](https://semver.org/).
 
-## [Unreleased]
+## [1.28.0] — 2026-06-18
+
+Pushes the dashboard KPIs to managers as a **weekly email digest**. The new
+`fieldpilot_urdf.digest` module renders a `CaseStatsSummary` into a ready-to-send
+`EmailDigest` (French subject plus self-contained HTML and plain-text bodies, with
+week-over-week deltas when last period's summary is passed) as pure data, so the
+open core stays free of the SMTP / n8n send layer. No breaking changes; additive
+over the 1.27 public API. 454 tests.
 
 ### Added
 - **Weekly email digest of the dashboard KPIs — `fieldpilot_urdf.digest`.**
@@ -915,6 +922,7 @@ standalone, pure-Python, pip-installable package (AGPL-3.0).
   spare-parts BOM, and multi-tenant hosting are **not** part of this package —
   they live in FieldPilot SaaS.
 
+[1.28.0]: https://github.com/DuQuatre/fieldpilot-urdf/releases/tag/v1.28.0
 [1.27.0]: https://github.com/DuQuatre/fieldpilot-urdf/releases/tag/v1.27.0
 [1.26.0]: https://github.com/DuQuatre/fieldpilot-urdf/releases/tag/v1.26.0
 [1.25.0]: https://github.com/DuQuatre/fieldpilot-urdf/releases/tag/v1.25.0
