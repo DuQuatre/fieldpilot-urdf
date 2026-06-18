@@ -34,17 +34,26 @@ def test_diagnostics_workflow_runs_end_to_end(tmp_path, capsys):
     from fieldpilot_urdf import list_cases
     assert "INT-2026-0042" in list_cases(root=tmp_path / "cases")
 
+    # it assembled a French report carrying the diagnosis + spare parts
+    htmls = result["report_html"]
+    assert "Rapport de diagnostic" in htmls and mod.TRUE_FAULT in htmls
+    assert "Pièces de rechange" in htmls and "recalibrate_encoder" in result["recommended"]
+    assert (tmp_path / "rapport.html").exists()
+
     # it printed the full narrative
     out = capsys.readouterr().out
-    assert "LOCALISE" in out and "DIALOG" in out and "CALIBRATE" in out
+    assert "LOCALISE" in out and "DIALOG" in out and "REPORT" in out
 
 
 @pytest.mark.skipif(importlib.util.find_spec("matplotlib") is None,
                     reason="[viz] extra not installed")
-def test_diagnostics_workflow_writes_visuals(tmp_path):
+def test_diagnostics_workflow_writes_visuals_and_report(tmp_path):
     mod = _load_example()
-    result = mod.main(out_dir=tmp_path)
-    gif = Path(result["visuals"]["gif"])
-    png = Path(result["visuals"]["png"])
+    mod.main(out_dir=tmp_path)
+    gif = tmp_path / "mouvement_3d.gif"
+    png = tmp_path / "oscilloscope.png"
     assert gif.exists() and gif.read_bytes()[:4] == b"GIF8"
     assert png.exists() and png.read_bytes()[:4] == b"\x89PNG"
+    # the report embeds the illustrations (base64 data URIs)
+    htmls = (tmp_path / "rapport.html").read_text(encoding="utf-8")
+    assert "data:image/gif;base64," in htmls and "Illustrations de la simulation" in htmls

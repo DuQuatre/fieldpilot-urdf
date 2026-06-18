@@ -10,7 +10,7 @@ import pytest
 
 from fieldpilot_urdf.models import Joint, JointLimit, Link, Origin, Robot
 from fieldpilot_urdf.report import (
-    DiagnosticReport, ReportImage, attach_simulation_illustrations,
+    DiagnosticReport, ReportImage, SparePart, attach_simulation_illustrations,
     build_simulation_illustrations, photo_requests, render_report_html,
 )
 
@@ -81,6 +81,17 @@ def test_render_html_is_french_and_embeds_photos():
     assert "Photos du technicien" in htmls
     assert "data:image/jpeg;base64," in htmls                # photo inlined
     assert base64.b64encode(b"JPEGDATA").decode() in htmls
+
+
+def test_render_html_lists_spare_parts():
+    report = DiagnosticReport(
+        reference="R1", confirmed=True, fault="j_shoulder", solution="recalibrer_codeur",
+        spare_parts=[SparePart(reference="ENC-1024", name="Codeur incrémental 1024 ppr"),
+                     SparePart(reference="CAL-KIT", name="Kit d'étalonnage", quantity=2)])
+    htmls = render_report_html(report)
+    assert "Pièces de rechange" in htmls
+    assert "ENC-1024" in htmls and "Codeur incrémental 1024 ppr" in htmls
+    assert "CAL-KIT" in htmls and "<td>2</td>" in htmls       # quantity column
 
 
 def test_render_html_escapes_user_text():

@@ -32,7 +32,9 @@ New here? The **[tutorial](docs/tutorial.md)** climbs all four layers end to end
 and **[`examples/full_stack_tour.py`](examples/full_stack_tour.py)** is its
 runnable companion. The sections below mirror the ladder. For the diagnostics
 loop end to end — localise → narrow by dialog → calibrate → recommend → record →
-visualise — run **[`examples/diagnostics_workflow.py`](examples/diagnostics_workflow.py)**.
+report — run **[`examples/diagnostics_workflow.py`](examples/diagnostics_workflow.py)**
+or read the illustrated **[diagnostics guide](docs/diagnostics-guide.md)**
+(scenarios, dialogs, spare parts, field interactions).
 
 ## Install
 
