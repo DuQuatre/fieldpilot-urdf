@@ -6,6 +6,21 @@ to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Added
+- **Oscilloscope parameter visuals — `render_scope` / `render_trajectory_scope`**
+  (`fieldpilot_urdf.viz`, the `[viz]` extra). Stacked time-series panels — a
+  multi-channel "scope" — for joint parameters (position / velocity / effort) over
+  time, with an **expected (simulated)** signal overlaid against the **observed**
+  one so the tech sees *where* and *how much* the real robot diverges from the
+  model. `render_scope(panels)` is the general plotter over `ScopePanel` /
+  `ScopeSeries` (each panel a stacked subplot; with two same-grid series and
+  `shade_divergence`, the gap is shaded and the max `|Δ|` annotated);
+  `render_trajectory_scope(nominal, observed=…)` is the convenience for any
+  `TimedTrajectory` / `simulate.Trajectory` (anything with `joint_ids` / `times`
+  / `q` / `u`), building one panel per (joint, signal). PNG or SVG bytes. Pairs
+  with the 1.19 3D fault-motion video — together they complete the diagnostics
+  visual story (3D motion + quantitative traces).
+
 ## [1.19.0] — 2026-06-18
 
 Third slice of the interactive diagnostics direction: **3D fault-motion
