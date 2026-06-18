@@ -15,8 +15,9 @@ real call, fully offline and deterministic:
     8. Show         3D fault-motion + oscilloscope traces (optional [viz] extra)        (1.19/1.20)
     9. Report       photos + illustrations + spare parts -> French HTML report          (1.22/1.23)
    10. Sync         report -> Gotenberg PDF request + Odoo project.task payload          (1.24)
+   11. Notify       report -> Telegram bot replies to the technician                     (1.25)
 
-    pip install fieldpilot-urdf            # steps 1–7, 9, 10 (core)
+    pip install fieldpilot-urdf            # steps 1–7, 9, 10, 11 (core)
     pip install "fieldpilot-urdf[viz]"     # + step 8 visuals & report illustrations
     python examples/diagnostics_workflow.py
 """
@@ -33,7 +34,7 @@ from fieldpilot_urdf import (
     candidates_from_scores, fault_priors, forward_kinematics, gotenberg_request,
     intervention_task_vals, list_cases, load_cases, localize_joint_fault,
     next_question, photo_requests, recommend_solution, render_report_html,
-    save_case, update_beliefs,
+    report_summary_text, save_case, telegram_messages, update_beliefs,
 )
 from fieldpilot_urdf.fk import R_to_rpy
 
@@ -232,6 +233,14 @@ def main(out_dir: Optional[Path] = None) -> dict:
     print(f"  Odoo project.task update: {task_vals}")
     print("  (the SaaS/n8n executes these; the library only builds the payloads)")
 
+    # 11. Notify: the Telegram replies the bot sends back to the technician.
+    banner("11. NOTIFY — reply to the technician on Telegram")
+    tg = telegram_messages(report, chat_id="<tech_chat_id>")
+    for m in tg:
+        extra = f" + {m.attachment.field}" if m.attachment else ""
+        print(f"  {m.method}{extra}")
+    print(f"  summary:\n    " + report_summary_text(report, parse_mode="").replace("\n", "\n    "))
+
     print("\n" + "=" * 74)
     print(f"  Diagnosed {resolved_fault} (offset {cal.offsets.get(resolved_fault, 0):+.3f} rad), "
           f"fix: {fix}.")
@@ -245,6 +254,7 @@ def main(out_dir: Optional[Path] = None) -> dict:
         "report_path": str(report_path) if report_path else None,
         "odoo_task_vals": task_vals,
         "gotenberg_filename": gb.output_filename,
+        "telegram_methods": [m.method for m in tg],
     }
 
 

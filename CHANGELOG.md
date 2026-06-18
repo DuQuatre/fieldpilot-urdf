@@ -6,6 +6,21 @@ to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Added
+- **Telegram bot reply wiring — `fieldpilot_urdf.telegram`.** Closes the field
+  loop back in the technician's chat. As with the Odoo wiring, the open core
+  neither talks to Telegram nor depends on it — it builds the Bot API request
+  data the n8n / SaaS side POSTs:
+  - `report_summary_text(report)` — the French message body (a confirmed-diagnosis
+    recap: fault, confidence, fix, spare parts), ready for `parse_mode=HTML`.
+  - `telegram_messages(report, chat_id, pdf=…)` — the `TelegramRequest` sequence:
+    the summary (`sendMessage`), each report illustration (the 3D GIF →
+    `sendAnimation`, the oscilloscope PNG → `sendPhoto`, with its caption), and
+    the report PDF (`sendDocument`) when supplied. Each request's
+    `requests_kwargs()` is `requests`/`httpx`-ready (`data` + uploaded `files`).
+  The example gains a step 11 NOTIFY; the illustrated guide gains a "Back to the
+  technician on Telegram" section. Pure Python.
+
 ## [1.24.0] — 2026-06-18
 
 Wires the diagnostic report into the **Odoo intervention PDF** pipeline. The new

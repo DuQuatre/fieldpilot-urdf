@@ -133,6 +133,11 @@ technician's photos, the spare-parts list, and — once confirmed — the render
 HTML→PDF request and the Odoo `ir.attachment` / `project.task` payloads that file
 the report PDF on the intervention — pure data, the SaaS does the I/O)
 
+**Telegram bot reply** — `report_summary_text`, `telegram_messages`,
+`TelegramRequest`, `TelegramAttachment` (build the bot's reply to the technician:
+the French summary plus the illustrations — 3D GIF as `sendAnimation`, scope PNG
+as `sendPhoto` — and the PDF as `sendDocument`; pure data, n8n POSTs it)
+
 **Hypothesis-test** — `diagnose`, `Symptom`, `Hypothesis`, `Verdict`,
 `DiagnoseReport`
 

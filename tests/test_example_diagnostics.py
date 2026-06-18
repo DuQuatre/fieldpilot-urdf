@@ -45,9 +45,13 @@ def test_diagnostics_workflow_runs_end_to_end(tmp_path, capsys):
     assert result["odoo_task_vals"]["x_cause_probable"] == mod.TRUE_FAULT
     assert result["gotenberg_filename"] == "rapport_INT-2026-0042.pdf"
 
+    # it built the Telegram replies (summary first, then the illustrations)
+    assert result["telegram_methods"][0] == "sendMessage"
+
     # it printed the full narrative
     out = capsys.readouterr().out
-    assert "LOCALISE" in out and "DIALOG" in out and "REPORT" in out and "SYNC" in out
+    assert "LOCALISE" in out and "DIALOG" in out and "REPORT" in out
+    assert "SYNC" in out and "NOTIFY" in out
 
 
 @pytest.mark.skipif(importlib.util.find_spec("matplotlib") is None,

@@ -80,6 +80,9 @@ from .intervention import (
     GotenbergRequest, gotenberg_request, intervention_attachment_vals,
     intervention_task_vals,
 )
+from .telegram import (
+    TelegramAttachment, TelegramRequest, report_summary_text, telegram_messages,
+)
 
 __all__ = [
     "__version__",
@@ -120,4 +123,5 @@ __all__ = [
     "build_simulation_illustrations", "attach_simulation_illustrations",
     "GotenbergRequest", "gotenberg_request", "intervention_attachment_vals",
     "intervention_task_vals",
+    "TelegramRequest", "TelegramAttachment", "report_summary_text", "telegram_messages",
 ]
