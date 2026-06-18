@@ -6,6 +6,15 @@ to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [1.19.0] — 2026-06-18
+
+Third slice of the interactive diagnostics direction: **3D fault-motion
+visuals**. `fieldpilot_urdf.viz` gains `render_motion` and
+`render_motion_comparison` (the `[viz]` extra) — animate a robot's motion as a
+3D stick-figure video and play a simulated faulted motion against the nominal
+one, so the technician can compare reality to the model. No breaking changes;
+additive over the 1.18 public API. 400 tests.
+
 ### Added
 - **3D fault-motion visuals — `render_motion` / `render_motion_comparison`**
   (`fieldpilot_urdf.viz`, the `[viz]` extra). Animate a robot through a trajectory
@@ -705,6 +714,7 @@ standalone, pure-Python, pip-installable package (AGPL-3.0).
   spare-parts BOM, and multi-tenant hosting are **not** part of this package —
   they live in FieldPilot SaaS.
 
+[1.19.0]: https://github.com/DuQuatre/fieldpilot-urdf/releases/tag/v1.19.0
 [1.18.0]: https://github.com/DuQuatre/fieldpilot-urdf/releases/tag/v1.18.0
 [1.17.0]: https://github.com/DuQuatre/fieldpilot-urdf/releases/tag/v1.17.0
 [1.16.0]: https://github.com/DuQuatre/fieldpilot-urdf/releases/tag/v1.16.0
