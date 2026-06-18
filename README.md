@@ -222,6 +222,19 @@ print(cands[0].joint, round(cands[0].estimated_offset, 4), round(cands[0].explai
 # -> e.g. 'wrist_2_joint' 0.03 0.99   (a 0.03 rad miscalibration explains 99% of the deviation)
 ```
 
+A single pose can be ambiguous; with **several** measurements, `calibrate_joint_offsets`
+solves for every joint's offset at once (Gauss-Newton, so even large offsets) —
+turning a set of measured poses into a calibrated model:
+
+```python
+from fieldpilot_urdf import calibrate_joint_offsets, PoseObservation
+
+obs = [PoseObservation(commanded_q=q, observed_xyz=p) for q, p in measurements]
+cal = calibrate_joint_offsets(robot, "tool0", obs)
+print(cal.offsets)                                   # {joint: estimated offset}
+print(cal.position_rms_before, "->", cal.position_rms_after)   # error collapses
+```
+
 Then **prove it** — inject the hypothesis on a copy, re-test, and confirm or
 refute. The ranked suspect feeds straight into `diagnose` as the hypothesis:
 
