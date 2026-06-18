@@ -19,3 +19,6 @@ htmlcov/
 .idea/
 .vscode/
 .DS_Store
+
+# Diagnostics example output
+diagnostics_output/
