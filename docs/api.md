@@ -122,6 +122,12 @@ so an n8n / LLM front-end drives the loop)
 history into fault-frequency priors — feeding `candidates_from_scores` — and
 per-fix success statistics)
 
+**Diagnostic report** — `DiagnosticReport`, `ReportImage`, `photo_requests`,
+`attach_simulation_illustrations`, `build_simulation_illustrations`,
+`render_report_html` (assemble a French HTML report from the diagnosis, the
+technician's photos, and — once confirmed — the rendered 3D / oscilloscope
+illustrations; ready for HTML→PDF)
+
 **Hypothesis-test** — `diagnose`, `Symptom`, `Hypothesis`, `Verdict`,
 `DiagnoseReport`
 

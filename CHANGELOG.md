@@ -6,6 +6,21 @@ to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Added
+- **Diagnostic report assembly — `fieldpilot_urdf.report`.** Bundle a diagnosis,
+  the technician's photos, and the simulation's illustrations into a
+  self-contained report (HTML, **in French** per the FieldPilot reports
+  convention — ready for HTML→PDF). `photo_requests` lists *which* pictures to
+  ask the tech for (French prompts, tailored to the suspected joints/links);
+  each shot is attached to a `DiagnosticReport` as a `ReportImage` (held
+  base64-encoded, JSON-safe). `attach_simulation_illustrations` renders the 3D
+  fault-motion video + oscilloscope traces (the 1.19/1.20 visuals) and attaches
+  them — but **only when the diagnosis is `confirmed`**, so the model's
+  prediction is shown beside the tech's photos only once the fault is
+  established. `render_report_html` emits the document with every image inlined
+  as a data URI. Models + HTML assembly are pure-Python core; only illustration
+  *generation* touches the `[viz]` extra, lazily.
+
 ## [1.21.0] — 2026-06-18
 
 Adds a runnable **end-to-end diagnostics example** tying the 1.14–1.20 Layer-4

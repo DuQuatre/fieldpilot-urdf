@@ -310,6 +310,24 @@ gif = render_motion_comparison(robot, nominal_path, faulted_path,
 open("fault.gif", "wb").write(gif)   # nominal solid / faulted dashed, divergence marked
 ```
 
+Then **assemble the report** — ask the tech for the right photos, attach the
+simulation illustrations *once confirmed*, and emit a self-contained French HTML
+document (ready for HTML→PDF):
+
+```python
+from fieldpilot_urdf import (DiagnosticReport, ReportImage, photo_requests,
+                             attach_simulation_illustrations, render_report_html)
+
+print(photo_requests(joints=["shoulder_pan_joint"]))   # what pictures to ask for (French)
+
+report = DiagnosticReport(reference="INT-2026-0042", confirmed=True,
+                          fault="shoulder_pan_joint", confidence=0.97,
+                          photos=[ReportImage.from_bytes("p1.jpg", tech_photo_bytes)])
+report = attach_simulation_illustrations(report, robot, nominal_path, faulted_path,
+                                         track_link="tool0")   # only when confirmed
+open("rapport.html", "w").write(render_report_html(report))    # → Gotenberg → PDF
+```
+
 …and the **scope traces** — joint position / velocity over time, expected vs
 observed, with the divergence shaded — the quantitative half of the comparison:
 
