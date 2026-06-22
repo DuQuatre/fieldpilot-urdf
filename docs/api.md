@@ -161,6 +161,23 @@ the content, n8n sends it)
 `inject_motor_fault`, `freeze_joint`, `freeze_joint_at`, `misconfigure_limit`,
 `fault_source_tag`
 
+### Layer 5 — Fleet GraphRAG
+
+**Structural embedding** — `robot_embedding`, `embedding_features`, `robot_dof`,
+`cosine_similarity`, `rank_by_similarity`, `FEATURE_NAMES`, `EMBEDDING_DIM`
+(embed a robot's topology — joint-type mix, branching, DOF, mass profile — into a
+fixed-size vector so structurally similar robots rank near each other under
+cosine similarity; pure numpy + networkx)
+
+**GraphRAG retrieval** — `GraphRAG`, `MemoryGraphBackend`, `MemoryStore`,
+`FileStore`, `get_store`, `model_id` (rank the fleet by structural similarity to a
+robot — `similar_to_id` / `similar_to_robot` — plus joint-type / motif /
+neighbourhood pattern queries and a per-robot fault-event history; the in-memory
+backend *is* the engine, so retrieval needs no database). The richer surface
+(`embedding_features`, the `graphrag` submodule's `GraphBackend` /
+`RobotStore` protocols, `is_read_only`) lives in `fieldpilot_urdf.embedding` and
+`fieldpilot_urdf.graphrag`.
+
 ### Misc
 
 `__version__`
@@ -210,6 +227,20 @@ shaded — the quantitative companion to the 3D video.
 > The visualisation renderers are intentionally **not** re-exported from the
 > top-level package, so `import fieldpilot_urdf` stays light. Import them from
 > `fieldpilot_urdf.viz`.
+
+### Layer 5 — Durable GraphRAG backend — `fieldpilot_urdf.graphrag.neo4j_backend` (`[graphrag]`)
+
+`Neo4jStore`, `GraphDB` (the durable Neo4j/Memgraph counterpart to
+`MemoryGraphBackend`, same `GraphBackend` contract — adds Cypher pattern queries
+and larger-than-memory storage; selected automatically when `NEO4J_BOLT_URL` is
+set)
+
+### Layer 5 — GraphRAG HTTP server — `fieldpilot_urdf.graphrag.server` (`[server]`)
+
+The FastAPI `app` (console script `fieldpilot-urdf-server`): robot store, graph,
+diagnostics, `/convert` (URDF ⇄ JSON ⇄ YAML), and the GraphRAG endpoints.
+Intentionally **not** imported from the top-level package, so `import
+fieldpilot_urdf` stays light.
 
 ---
 

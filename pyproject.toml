@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "fieldpilot-urdf"
-version = "1.29.0.dev0"
+version = "1.29.0"
 description = "Import any ROS robot from a URL and run FK/IK/collision/validation in pure Python — no ROS install, no build."
 readme = "README.md"
 requires-python = ">=3.10"
@@ -44,15 +44,30 @@ dynamics = ["sympy>=1.12"]
 # Numerical multibody simulation via PyBullet (compiled engine). Optional + lazy
 # so the core stays pure-Python; meshes from import_urdf feed it via sim.py.
 sim = ["pybullet>=3.2.5"]
-all = ["fieldpilot-urdf[mesh,viz,meshviz,dynamics,sim]"]
+# GraphRAG HTTP server (FastAPI + uvicorn). The retrieval engine itself runs on
+# the core install (numpy + networkx); these only add the web transport. pyyaml
+# powers the /convert YAML path.
+server = ["fastapi>=0.110", "uvicorn[standard]>=0.27", "pyyaml>=6.0", "httpx>=0.27"]
+# Durable Neo4j/Memgraph graph backend for GraphRAG (optional; in-memory is default).
+graphrag = ["neo4j>=5.0"]
+# Live-Neo4j integration tests (run with: pytest -m integration).
+integration = ["testcontainers[neo4j]>=4.0"]
+all = ["fieldpilot-urdf[mesh,viz,meshviz,dynamics,sim,server,graphrag]"]
 dev = ["pytest>=8.0", "fieldpilot-urdf[all]"]
 
 [project.urls]
 Homepage = "https://github.com/DuQuatre/fieldpilot-urdf"
 "FieldPilot SaaS" = "https://fieldpilot.example"   # TODO: real marketing URL
 
+[project.scripts]
+fieldpilot-urdf-server = "fieldpilot_urdf.graphrag.launcher:main"
+
 [tool.hatch.build.targets.wheel]
 packages = ["src/fieldpilot_urdf"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
+addopts = "-m 'not integration'"
+markers = [
+    "integration: tests needing a live Neo4j (Docker/testcontainers); run with -m integration",
+]

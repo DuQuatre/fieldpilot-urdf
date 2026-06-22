@@ -19,8 +19,9 @@ real call, fully offline and deterministic:
    12. Order        spare parts -> Odoo SPA sale.order payload                            (1.26)
    13. Dashboard    case base -> KPI summary for the admin/MRR dashboard                  (1.27)
    14. Digest       KPIs -> weekly French email digest                                    (1.28)
+   15. GraphRAG     find structurally similar robots in the fleet                          (1.29)
 
-    pip install fieldpilot-urdf            # steps 1–7, 9–14 (core)
+    pip install fieldpilot-urdf            # steps 1–7, 9–15 (core)
     pip install "fieldpilot-urdf[viz]"     # + step 8 visuals & report illustrations
     python examples/diagnostics_workflow.py
 """
@@ -40,6 +41,7 @@ from fieldpilot_urdf import (
     report_summary_text, save_case, spare_parts_order_vals, telegram_messages,
     unresolved_part_refs, update_beliefs, weekly_digest,
 )
+from fieldpilot_urdf import GraphRAG, MemoryGraphBackend
 from fieldpilot_urdf.fk import R_to_rpy
 
 # Which spare parts each fix needs (in production: the SPA spare-parts catalogue).
@@ -75,6 +77,22 @@ def build_arm() -> Robot:
                   origin=Origin(xyz=(0.9, 0, 0)), axis=(0, 1, 0), limit=lim()),
             Joint(name="j_elbow", type="revolute", parent="link2", child="tool",
                   origin=Origin(xyz=(0.9, 0, 0)), axis=(0, 1, 0), limit=lim()),
+        ],
+    )
+
+
+def _build_gantry() -> Robot:
+    """A 3-axis cartesian gantry — structurally unlike the serial arm."""
+    def lim() -> JointLimit:
+        return JointLimit(lower=-1, upper=1, effort=200, velocity=2.0)
+
+    return Robot(
+        name="cartesian_gantry",
+        links=[Link(name=f"g{i}") for i in range(4)],
+        joints=[
+            Joint(name="gx", type="prismatic", parent="g0", child="g1", axis=(1, 0, 0), limit=lim()),
+            Joint(name="gy", type="prismatic", parent="g1", child="g2", axis=(0, 1, 0), limit=lim()),
+            Joint(name="gz", type="prismatic", parent="g2", child="g3", axis=(0, 0, 1), limit=lim()),
         ],
     )
 
@@ -272,6 +290,27 @@ def main(out_dir: Optional[Path] = None) -> dict:
     print(f"  subject: {digest.subject}")
     print(f"  html {len(digest.html_body)} chars, text {len(digest.text_body)} chars")
 
+    # 15. GraphRAG: which robots in the fleet are structurally like this one?
+    #     A new robot's diagnosis can borrow the cases of its nearest neighbours.
+    banner("15. GRAPHRAG — structurally similar robots in the fleet")
+    backend = MemoryGraphBackend()              # pure in-memory; no DB needed
+    backend.put(robot)                          # the robot we just diagnosed
+    twin = robot.model_copy(update={"name": "diag_arm_mk2"})   # a near-identical sibling
+    backend.put(twin)
+    backend.put(_build_gantry())                # a very different cartesian robot
+    rag = GraphRAG(backend)
+    similar = rag.similar_to_id("diag_arm", top_k=3)
+    for h in similar:
+        print(f"  {h['id']:14s} similarity {h['similarity']:.3f}")
+    nearest = similar[0]["id"] if similar else None
+    # Record this intervention against the robot's durable fault history.
+    backend.write_fault_event("diag_arm", {
+        "type": resolved_fault, "target": resolved_fault, "severity": 0.5,
+        "ts": "2026-06-22", "note": fix,
+    })
+    print(f"  nearest neighbour: {nearest} (its past cases transfer to a new unit)")
+    print(f"  fault history now: {len(backend.get_fault_events('diag_arm'))} event(s)")
+
     print("\n" + "=" * 74)
     print(f"  Diagnosed {resolved_fault} (offset {cal.offsets.get(resolved_fault, 0):+.3f} rad), "
           f"fix: {fix}.")
@@ -291,6 +330,7 @@ def main(out_dir: Optional[Path] = None) -> dict:
         "dashboard_total_cases": stats.total_cases,
         "dashboard_top_fault": stats.top_faults[0].fault if stats.top_faults else None,
         "digest_subject": digest.subject,
+        "graphrag_nearest": nearest,
     }
 
 

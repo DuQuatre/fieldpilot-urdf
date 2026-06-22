@@ -11,8 +11,8 @@
 robotics toolkit — small, self-contained, pure-Python. Point it at a robot on
 GitHub and get a working kinematic model in three lines.
 
-> **Status: `1.28.0` — stable, published on [PyPI](https://pypi.org/project/fieldpilot-urdf/).**
-> 454 passing tests, a documented [public API](#public-api--stability) under
+> **Status: `1.29.0` — stable, published on [PyPI](https://pypi.org/project/fieldpilot-urdf/).**
+> 508 passing tests, a documented [public API](#public-api--stability) under
 > SemVer. `pip install fieldpilot-urdf` (see [`RELEASING.md`](RELEASING.md) for
 > how releases are cut).
 
@@ -345,6 +345,41 @@ open("scope.png", "wb").write(png)   # stacked panels, max Δ annotated per chan
 these hypotheses via an LLM is part of [FieldPilot](https://github.com/DuQuatre)
 SaaS. The reasoning core above stays local and deterministic.)*
 
+## Fleet retrieval — GraphRAG
+
+The four layers diagnose *one* robot. **GraphRAG** works across the fleet: it
+embeds each robot's structure (joint-type mix, branching, DOF, mass profile) into
+a vector, so the robots most *like* a given one are a cosine-similarity away —
+and their past cases and fault history transfer to a new unit. The retrieval
+engine runs on the **core install** (numpy + networkx); no database required.
+
+```python
+from fieldpilot_urdf import GraphRAG, MemoryGraphBackend, robot_embedding, cosine_similarity
+
+# Embed a robot's structure, compare two robots directly:
+v = robot_embedding(robot)                 # fixed-size structural vector
+cosine_similarity(robot_embedding(a), robot_embedding(b))   # 1.0 == identical structure
+
+# Or load a fleet and ask for the nearest neighbours of one of them:
+backend = MemoryGraphBackend()             # in-memory; or persist via FIELDPILOT_URDF_STORE_DIR
+for r in fleet:
+    backend.put(r)
+rag = GraphRAG(backend)
+rag.similar_to_id("ur5e_cell_3", top_k=3)  # [{'id': 'ur5e_cell_1', 'similarity': 0.99}, ...]
+rag.models_with_joint_type("prismatic")    # pattern queries, too
+rag.similarity_context("ur5e_cell_3")      # a ready-to-prompt French context block for an LLM
+```
+
+The same `GraphRAG` API runs unchanged over a durable **Neo4j/Memgraph** backend
+(`pip install 'fieldpilot-urdf[graphrag]'`, set `NEO4J_BOLT_URL`), which also
+unlocks read-only Cypher pattern queries. A **FastAPI server** exposes the whole
+surface — robot store, graph, diagnostics, `/convert`, and the GraphRAG endpoints:
+
+```bash
+pip install 'fieldpilot-urdf[server]'
+fieldpilot-urdf-server            # uvicorn on :8120, Swagger docs at /docs
+```
+
 ## What you can do
 
 | Capability | API |
@@ -359,6 +394,7 @@ SaaS. The reasoning core above stays local and deterministic.)*
 | Deterministic auto-repair | `repair` |
 | Two-tier symbolic fault diagnosis | `diagnose` |
 | Fault propagation & root-cause ranking | `affected_links`, `criticality`, `rank_root_causes` |
+| Structural embedding & fleet GraphRAG | `robot_embedding`, `GraphRAG`, `MemoryGraphBackend` |
 | Symbolic dynamics (Kane's method) | `SymbolicDynamics` |
 | Closed-loop modelling & constraint deriver | `LoopClosure`, `loops.derive_loop_constraints` |
 | Closed-loop (constrained) dynamics | `constrained.constrained_dynamics` |
