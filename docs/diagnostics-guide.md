@@ -201,6 +201,37 @@ stats.model_dump()
 The same `fault_priors` that this history produces also primes the dialog at the
 top of the loop — so the dashboard and the diagnosis share one growing memory.
 
+## Fleet retrieval with GraphRAG
+
+The history above is *per machine*. But when a brand-new robot arrives — no cases
+yet — its diagnosis can still start smart by borrowing from the robots that are
+**structurally** most like it. `GraphRAG` embeds each robot's topology (joint-type
+mix, branching, DOF, mass profile) into a vector and ranks the fleet by cosine
+similarity. It runs on the core install — no database:
+
+```python
+from fieldpilot_urdf import GraphRAG, MemoryGraphBackend, load_cases, fault_priors
+
+backend = MemoryGraphBackend()           # or persist: FIELDPILOT_URDF_STORE_DIR=/data/robots
+for r in fleet:                          # every robot you service
+    backend.put(r)
+rag = GraphRAG(backend)
+
+# A new unit just like 'ur5e_cell_3' — who are its nearest structural neighbours?
+neighbours = rag.similar_to_id("ur5e_cell_3", top_k=3)
+#  -> [{'id': 'ur5e_cell_1', 'similarity': 0.99}, {'id': 'ur5e_cell_7', 'similarity': 0.98}, …]
+
+# Seed the dialog with priors learned on the nearest neighbour's machine:
+nearest = neighbours[0]["id"]
+priors = fault_priors(load_cases(), machine=nearest)   # -> candidates_from_scores -> rank_questions
+```
+
+Each robot also keeps a durable **fault history** (`write_fault_event` /
+`get_fault_events`) — the queryable shadow of the case base — so the feedback loop
+spans the whole fleet. The same `GraphRAG` API runs unchanged over a Neo4j backend
+(`[graphrag]` extra) or behind the HTTP server (`[server]` extra,
+`fieldpilot-urdf-server`); see the README's *Fleet retrieval — GraphRAG* section.
+
 A **weekly email digest** pushes the same KPIs to managers — `weekly_digest`
 renders the summary into a French email (subject + HTML + text), with
 week-over-week deltas when you pass last week's summary:

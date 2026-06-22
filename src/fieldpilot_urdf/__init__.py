@@ -10,7 +10,7 @@ imported here, so the core install stays light — `pip install fieldpilot-urdf[
 and `from fieldpilot_urdf.viz import render_kinematic_tree, render_pose_3d`.
 """
 
-__version__ = "1.29.0.dev0"
+__version__ = "1.29.0"
 
 from .collisions import (
     MeshResolver, Obstacle, aabb_overlap, box_obstacle, clear_mesh_cache,
@@ -88,6 +88,13 @@ from .spare_parts import (
 )
 from .dashboard import CaseStatsSummary, FaultStat, case_stats_summary
 from .digest import EmailDigest, weekly_digest
+from .embedding import (
+    EMBEDDING_DIM, FEATURE_NAMES, cosine_similarity, embedding_features,
+    rank_by_similarity, robot_dof, robot_embedding,
+)
+from .graphrag import (
+    GraphRAG, MemoryGraphBackend, MemoryStore, FileStore, get_store, model_id,
+)
 
 __all__ = [
     "__version__",
@@ -132,4 +139,7 @@ __all__ = [
     "spare_parts_order_vals", "spare_parts_order_lines", "unresolved_part_refs",
     "case_stats_summary", "CaseStatsSummary", "FaultStat",
     "weekly_digest", "EmailDigest",
+    "robot_embedding", "embedding_features", "robot_dof", "cosine_similarity",
+    "rank_by_similarity", "FEATURE_NAMES", "EMBEDDING_DIM",
+    "GraphRAG", "MemoryGraphBackend", "MemoryStore", "FileStore", "get_store", "model_id",
 ]

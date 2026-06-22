@@ -6,6 +6,61 @@ to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [1.29.0] — 2026-06-22
+
+Brings MecAI's new **GraphRAG layer** to the fleet. Where the diagnostics chain
+answers "what's wrong with *this* robot", GraphRAG answers "which other robots are
+structurally like it" — so a new robot's diagnosis can borrow the cases and fault
+history of its nearest structural neighbours. Ported from the MecAI project (MIT)
+and re-targeted onto the URDF `Robot` (no sensor model; URDF joint types; robots
+keyed by `name`). The retrieval engine runs on the **core install** (numpy +
+networkx); a durable Neo4j backend and a FastAPI server are optional extras. No
+breaking changes; additive over the 1.28 public API. 508 tests (+9 gated Neo4j
+integration tests).
+
+### Added
+- **Structural robot embedding — `fieldpilot_urdf.embedding`.** A deterministic,
+  interpretable feature vector capturing a robot's *structural role* — joint-type
+  mix, branching, degree distribution, mass profile, and DOF — so two
+  kinematically similar robots land near each other under cosine similarity.
+  `robot_embedding(robot)` → a fixed-size `(EMBEDDING_DIM,)` vector
+  (`FEATURE_NAMES` labels each dimension; `embedding_features` returns the labelled
+  dict; `robot_dof` sums per-joint DOF). `cosine_similarity` and
+  `rank_by_similarity` (vectorized, single BLAS call) complete the primitive. Pure
+  functions, core deps only — a learned GNN encoder can later replace
+  `robot_embedding` behind the same signature. Ported from MecAI `graph.embed`.
+- **GraphRAG retrieval layer — `fieldpilot_urdf.graphrag`.** Fleet-level
+  structural retrieval over a pluggable graph backend:
+  - `GraphRAG` — `similar_to_id` / `similar_to_robot` (rank stored robots by
+    structural similarity, excluding the query), `models_with_joint_type`,
+    `joint_chain_motif`, `subgraph_around`, a read-only-guarded `cypher` escape
+    hatch, and `similarity_context` (a French prompt block for LLM tool results).
+  - `MemoryGraphBackend` — pure NetworkX + numpy, the default; *is* the GraphRAG
+    engine, so retrieval works with **no database**. Optional JSON-file
+    persistence via `FIELDPILOT_URDF_STORE_DIR`. Records a per-robot fault-event
+    history — the durable shadow of a `DiagnosticCase`.
+  - `MemoryStore` / `FileStore` — plain key-value robot stores (robots keyed by
+    `name`, atomic file writes, traversal-safe ids); `get_store()` selects the
+    backend by env (`NEO4J_BOLT_URL` → Neo4j, `FIELDPILOT_URDF_STORE_DIR` → file,
+    else in-memory).
+- **Durable Neo4j/Memgraph backend — `[graphrag]` extra.** `Neo4jStore` persists
+  each robot as a canonical-JSON `:Model` node plus a decomposed `:Link`/`[:JOINT]`
+  subgraph (batched `UNWIND` writes), enabling Cypher pattern queries and
+  larger-than-memory storage. Same `GraphBackend` contract as the in-memory
+  backend, proven by a parametrized parity suite (gated behind the `integration`
+  marker; runs against a `testcontainers` Neo4j or `NEO4J_TEST_BOLT_URL`).
+- **GraphRAG HTTP server — `[server]` extra.** `fieldpilot_urdf.graphrag.server`
+  is a FastAPI app (console script `fieldpilot-urdf-server`, default port 8120)
+  mirroring MecAI's `mecai-server`: a robot store (`/model[/load]`, `/models`,
+  `/model/{id}[/summary]`), graph (`/model/{id}/graph`, `/chain`), diagnostics
+  (`/propagate`, `/root-cause`, reusing `fault_propagation`), stateless `/convert`
+  (URDF ⇄ JSON ⇄ YAML), and the GraphRAG endpoints (`/graph/similar[/{id}]`,
+  `/graph/models-with-joint/{type}`, `/graph/model/{id}/subgraph`, `/graph/query`,
+  and the `/graph/model/{id}/fault-event` feedback loop). Not imported at the
+  package top level, so a plain `pip install fieldpilot-urdf` stays light. The
+  example gains a step 15 GRAPHRAG; the guide gains a "Fleet retrieval with
+  GraphRAG" section.
+
 ## [1.28.0] — 2026-06-18
 
 Pushes the dashboard KPIs to managers as a **weekly email digest**. The new
@@ -924,6 +979,7 @@ standalone, pure-Python, pip-installable package (AGPL-3.0).
   spare-parts BOM, and multi-tenant hosting are **not** part of this package —
   they live in FieldPilot SaaS.
 
+[1.29.0]: https://github.com/DuQuatre/fieldpilot-urdf/releases/tag/v1.29.0
 [1.28.0]: https://github.com/DuQuatre/fieldpilot-urdf/releases/tag/v1.28.0
 [1.27.0]: https://github.com/DuQuatre/fieldpilot-urdf/releases/tag/v1.27.0
 [1.26.0]: https://github.com/DuQuatre/fieldpilot-urdf/releases/tag/v1.26.0
