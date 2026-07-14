@@ -95,6 +95,7 @@ from .embedding import (
 from .graphrag import (
     GraphRAG, MemoryGraphBackend, MemoryStore, FileStore, get_store, model_id,
 )
+from .mesh_primitives import save_box_mesh, save_cylinder_mesh, save_sphere_mesh
 
 __all__ = [
     "__version__",
@@ -142,4 +143,5 @@ __all__ = [
     "robot_embedding", "embedding_features", "robot_dof", "cosine_similarity",
     "rank_by_similarity", "FEATURE_NAMES", "EMBEDDING_DIM",
     "GraphRAG", "MemoryGraphBackend", "MemoryStore", "FileStore", "get_store", "model_id",
+    "save_box_mesh", "save_cylinder_mesh", "save_sphere_mesh",
 ]

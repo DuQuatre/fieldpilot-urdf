@@ -208,6 +208,13 @@ pure NumPy — plus inverse dynamics and gravity-compensation torques)
 
 `PyBulletSim`, `rewrite_mesh_paths`
 
+### Mesh primitive generation — `fieldpilot_urdf.mesh_primitives` (`[mesh]`)
+
+`save_box_mesh`, `save_cylinder_mesh`, `save_sphere_mesh` (real STL/OBJ/...
+geometry via trimesh, for `Link.visuals` — cylinders are base-at-local-origin
+extending +Z, matching this codebase's link convention, not trimesh's own
+centered-at-origin default)
+
 ### Visualisation — `fieldpilot_urdf.viz` (`[viz]` / `[meshviz]`)
 
 `render_kinematic_tree`, `render_pose_3d`, `render_motion`,

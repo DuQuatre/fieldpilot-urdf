@@ -6,6 +6,18 @@ to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Added
+- **Primitive mesh generation** — `mesh_primitives` module:
+  `save_box_mesh(x, y, z, out_path)`, `save_cylinder_mesh(radius, length,
+  out_path)` (base at the local origin, extending +Z — matches this
+  codebase's link convention), and `save_sphere_mesh(radius, out_path)`,
+  writing real STL/OBJ/... geometry via trimesh. Reuses the existing `[mesh]`
+  extra (previously only used by `collisions`'s AABB fallback) — no new
+  dependency. Ported from the MecAI project (MIT); no functional retargeting
+  needed, since the module has zero coupling to `Robot`/`Link`/`Joint` — see
+  its module docstring for how it plugs into this package's `Link.visuals`
+  (`list[Visual]`) instead of MecAI's single `Link.mesh_uri` field.
+
 ## [1.29.0] — 2026-06-22
 
 Brings MecAI's new **GraphRAG layer** to the fleet. Where the diagnostics chain
