@@ -57,6 +57,7 @@ dev = ["pytest>=8.0", "fieldpilot-urdf[all]"]
 
 [project.urls]
 Homepage = "https://github.com/DuQuatre/fieldpilot-urdf"
+Changelog = "https://github.com/DuQuatre/fieldpilot-urdf/blob/main/CHANGELOG.md"
 "FieldPilot SaaS" = "https://fieldpilot.example"   # TODO: real marketing URL
 
 [project.scripts]
