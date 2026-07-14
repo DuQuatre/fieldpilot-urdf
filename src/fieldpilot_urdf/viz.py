@@ -509,10 +509,26 @@ def _resolve_mesh_robot(
 ) -> tuple[Robot, int]:
     """Deep-copy `robot` for handing to urchin's loader:
 
-    * Rewrite every <visual> <mesh> filename to an absolute on-disk path under
-      `mesh_dir` so urchin resolves it regardless of where the URDF file lives.
-      Visuals whose mesh can't be located on disk are dropped (the resolvable
-      parts still render).
+    * Rewrite every <visual> <mesh> filename to an absolute on-disk path so
+      urchin resolves it regardless of where the URDF file lives. Tried in
+      order: (1) under `mesh_dir` (matches the `fetch_meshes` layout), then
+      (2) the filename exactly as given, if it's already a resolvable path
+      (absolute, or relative to the current working directory) — this is
+      the common case for meshes built in-process (e.g. `mesh_primitives`)
+      rather than fetched from a package registry, where there is no
+      `mesh_dir` at all. Visuals whose mesh can't be located either way are
+      dropped (the resolvable parts still render).
+
+      BUG FIXED: previously, path (2) didn't exist — passing `mesh_dir=None`
+      (or a `mesh_dir` that just doesn't happen to contain the file)
+      unconditionally dropped every Mesh visual, even ones whose `filename`
+      was already a perfectly valid on-disk path. Confirmed by hand: a
+      `Robot` with `Visual(geometry=Mesh(filename=<real absolute .stl>))`
+      rendered as a blank frame via `render_pose_mesh(robot)` with no
+      `mesh_dir` — same PNG byte count as an empty scene — until `mesh_dir`
+      was passed too (at which point `pathlib`'s "absolute path on the right
+      of `/` discards the left operand" behaviour happened to make it work
+      by accident, regardless of what `mesh_dir` actually was).
     * Drop all <collision> geometry. We render visuals only, and urchin loaded
       with lazy_load_meshes=False would otherwise try (and fail) to load
       collision meshes too.
@@ -521,6 +537,7 @@ def _resolve_mesh_robot(
 
     package://pkg/sub  ->  {mesh_dir}/pkg/sub      (matches fetch_meshes layout)
     other/relative     ->  {mesh_dir}/{filename}   (best-effort)
+    (any of the above) ->  {filename} as given     (if directly resolvable)
     """
     out = robot.model_copy(deep=True)
     dropped = 0
@@ -540,9 +557,13 @@ def _resolve_mesh_robot(
                 if cand.is_file():
                     on_disk = cand
             if on_disk is None:
+                direct = Path(geom.filename)
+                if direct.is_file():
+                    on_disk = direct
+            if on_disk is None:
                 dropped += 1
                 continue
-            v.geometry = geom.model_copy(update={"filename": str(on_disk)})
+            v.geometry = geom.model_copy(update={"filename": str(on_disk.resolve())})
             kept.append(v)
         link.visuals = kept
     return out, dropped

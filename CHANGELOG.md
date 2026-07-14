@@ -18,6 +18,17 @@ to [Semantic Versioning](https://semver.org/).
   its module docstring for how it plugs into this package's `Link.visuals`
   (`list[Visual]`) instead of MecAI's single `Link.mesh_uri` field.
 
+### Fixed
+- `render_pose_mesh`'s `_resolve_mesh_robot` was silently dropping every
+  `Mesh` visual whenever `mesh_dir` was `None` (or just didn't happen to
+  contain the file) — even when the mesh's `filename` was already a
+  perfectly valid, directly-resolvable path (e.g. anything generated
+  in-process via `mesh_primitives`, rather than fetched under a package
+  registry layout). The render came back a blank frame, byte-for-byte
+  identical to an empty scene, with no error. Found while running the
+  `mesh_primitives` port against a real robot. Now falls back to the
+  filename exactly as given before dropping the visual.
+
 ## [1.29.0] — 2026-06-22
 
 Brings MecAI's new **GraphRAG layer** to the fleet. Where the diagnostics chain

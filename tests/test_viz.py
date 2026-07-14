@@ -215,6 +215,44 @@ def test_resolve_mesh_robot_rewrites_and_drops(tmp_path):
     assert mesh_geom.filename == str(present)  # absolute, resolvable by urchin
 
 
+def test_resolve_mesh_robot_direct_path_needs_no_mesh_dir(tmp_path):
+    """Regression test: a Mesh geometry whose filename is ALREADY a valid
+    on-disk path (e.g. written by mesh_primitives, not fetched under a
+    package/mesh_dir layout) must NOT be dropped just because mesh_dir is
+    None -- previously it always was, silently, with no error and no
+    warning: render_pose_mesh(robot) came back a blank frame, indistinguishable
+    byte-for-byte from an empty scene, unless a mesh_dir happened to be passed
+    too (at which point it worked only by an unrelated pathlib accident:
+    Path(mesh_dir) / <absolute path> discards mesh_dir entirely)."""
+    from fieldpilot_urdf.viz import _resolve_mesh_robot
+
+    mesh_file = tmp_path / "generated" / "link1.stl"
+    mesh_file.parent.mkdir(parents=True)
+    mesh_file.write_bytes(b"solid\n")
+
+    urdf = f"""\
+<robot name="m">
+  <link name="base">
+    <visual><geometry><mesh filename="{mesh_file}"/></geometry></visual>
+  </link>
+</robot>
+"""
+    r = from_xml(urdf)
+
+    out, dropped = _resolve_mesh_robot(r, None)  # no mesh_dir at all
+    assert dropped == 0
+    mesh_geom = out.links[0].visuals[0].geometry
+    assert mesh_geom.filename == str(mesh_file.resolve())
+
+    # Also holds when a mesh_dir IS given but doesn't contain this file --
+    # the direct-path fallback must still catch it rather than dropping.
+    unrelated_dir = tmp_path / "unrelated_mesh_dir"
+    unrelated_dir.mkdir()
+    out2, dropped2 = _resolve_mesh_robot(r, unrelated_dir)
+    assert dropped2 == 0
+    assert out2.links[0].visuals[0].geometry.filename == str(mesh_file.resolve())
+
+
 if __name__ == "__main__":
     import sys
     sys.exit(pytest.main([__file__, "-q"]))
