@@ -6,6 +6,17 @@ to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [1.31.0] — 2026-07-14
+
+PyPI has no native changelog display — its "Release history" is just an
+auto-generated version/date list, not `CHANGELOG.md` content — and this
+project had never declared a `Changelog` project URL, only `Homepage`. No
+functional changes; additive metadata only.
+
+### Changed
+- **Added a `Changelog` project URL** (`[project.urls]`), pointing to
+  `CHANGELOG.md` on GitHub, so the PyPI sidebar links to it directly.
+
 ## [1.30.0] — 2026-07-14
 
 Brings MecAI's new **mesh generation** to link visuals: real STL/OBJ primitive
@@ -1012,6 +1023,7 @@ standalone, pure-Python, pip-installable package (AGPL-3.0).
   spare-parts BOM, and multi-tenant hosting are **not** part of this package —
   they live in FieldPilot SaaS.
 
+[1.31.0]: https://github.com/DuQuatre/fieldpilot-urdf/releases/tag/v1.31.0
 [1.30.0]: https://github.com/DuQuatre/fieldpilot-urdf/releases/tag/v1.30.0
 [1.29.0]: https://github.com/DuQuatre/fieldpilot-urdf/releases/tag/v1.29.0
 [1.28.0]: https://github.com/DuQuatre/fieldpilot-urdf/releases/tag/v1.28.0
