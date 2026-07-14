@@ -6,6 +6,16 @@ to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [1.30.0] — 2026-07-14
+
+Brings MecAI's new **mesh generation** to link visuals: real STL/OBJ primitive
+geometry (box/cylinder/sphere) instead of hand-authored `<visual>` XML or no
+geometry at all. Also fixes a real bug found while proving the port worked
+end-to-end against a real robot — `render_pose_mesh` was silently rendering
+blank frames for any mesh whose path didn't happen to live under a `mesh_dir`.
+No breaking changes; additive over the 1.29 public API. 513 tests (+9 gated
+Neo4j integration tests).
+
 ### Added
 - **Primitive mesh generation** — `mesh_primitives` module:
   `save_box_mesh(x, y, z, out_path)`, `save_cylinder_mesh(radius, length,
@@ -1002,6 +1012,7 @@ standalone, pure-Python, pip-installable package (AGPL-3.0).
   spare-parts BOM, and multi-tenant hosting are **not** part of this package —
   they live in FieldPilot SaaS.
 
+[1.30.0]: https://github.com/DuQuatre/fieldpilot-urdf/releases/tag/v1.30.0
 [1.29.0]: https://github.com/DuQuatre/fieldpilot-urdf/releases/tag/v1.29.0
 [1.28.0]: https://github.com/DuQuatre/fieldpilot-urdf/releases/tag/v1.28.0
 [1.27.0]: https://github.com/DuQuatre/fieldpilot-urdf/releases/tag/v1.27.0
